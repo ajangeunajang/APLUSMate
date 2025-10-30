@@ -21,11 +21,11 @@ export default function Home() {
           페이지별 질문과 저장으로 공부 흐름이 끊기지 않습니다.<br/>
           <br/>
           Coming Soon... 
-          Dec 2025 
+          2025년 12월 중
           </p>
         </div>
           <div>
-            <button className="bg-gray-700 hover:bg-gray-900 transition-colors duration-300 text-white px-4 py-2 rounded-full">
+            <button className="bg-black hover:bg-gray-900 transition-colors duration-300 text-white px-4 py-2 rounded-full">
               <a href="https://www.notion.so/kaist-students/A-Mate-AI-29b14badf5ac804f8481e7fbed15a740?source=copy_link" target="_blank" rel="noopener noreferrer">
               GDGoC Notion
               </a>
