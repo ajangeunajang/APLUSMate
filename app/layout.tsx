@@ -21,11 +21,11 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://aplus-mate.vercel.app/",
     siteName: "A+MATE",
-    title: "A+MATE",
+    title: "AI와 강의복습 | A+MATE",
     description: "PDF 창, 챗봇 창을 번갈아가며 공부하고 있나요?",
     images: [
       {
-        url: "/A+Mateog.png",  
+        url: "/A+Mateog2.png",  
         width: 1200,
         height: 630,
         type: "image/png",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "A+MATE",
+    title: "AI와 강의복습 | A+MATE",
     description: "PDF 창, 챗봇 창을 번갈아가며 공부하고 있나요?",
-    images: ["/A+Mateog.png"],
+    images: ["/A+Mateog2.png"],
   },
 };
 
