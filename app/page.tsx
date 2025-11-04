@@ -23,7 +23,7 @@ export default function Home() {
     formData.append('pdf_file', file);
 
     try {
-      const response = await fetch('http://104.198.57.165:8002/pdfs/upload', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -31,7 +31,7 @@ export default function Home() {
       if (!response.ok) {
         const errData = await response.json();
         console.error('업로드 실패:', errData);
-        alert('업로드에 실패했습니다.');
+        alert(errData.error || '업로드에 실패했습니다.');
         return;
       }
 
