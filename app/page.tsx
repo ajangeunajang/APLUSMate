@@ -1,9 +1,11 @@
 'use client';
 import Image from 'next/image';
 import { useState, useRef } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 
 export default function Home() {
+  const { data: session } = useSession();
+  console.log(session);
   const [isPopupOpen, setIsPopupOpen] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -111,17 +113,20 @@ export default function Home() {
         )}
 
         {!isPopupOpen && (
-          <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
-            <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
-              Documents
-            </li>
-            <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
-              Bookmarks
-            </li>
-            <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
-              Shop
-            </li>
-          </ul>
+          <div>
+            <h1>{session?.user?.name || 'Name'}</h1>
+            <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
+              <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
+                Documents
+              </li>
+              <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
+                Bookmarks
+              </li>
+              <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
+                Shop
+              </li>
+            </ul>
+          </div>
         )}
       </nav>
 
@@ -175,9 +180,10 @@ export default function Home() {
               </p>
               <div className="mt-12 sm:pt-0 w-full hover:opacity-20 transition-opacity duration-300">
                 <button
-                  onClick={() =>
-                    signIn('google', { callbackUrl: '/dashboard' })
-                  }
+                  onClick={() => {
+                    setIsPopupOpen(false);
+                    signIn('google', { callbackUrl: '/' });
+                  }}
                   className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium"
                 >
                   Continue with Google
