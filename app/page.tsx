@@ -6,6 +6,9 @@ import { signIn, useSession } from 'next-auth/react';
 export default function Home() {
   const { data: session, status } = useSession();
   console.log(session);
+  const fullName = (session?.user?.name || '').trim();
+  const firstOnly = fullName.split(/\s+/)[0] || '';
+  console.log(firstOnly);
 
   // 로그인 상태에 따라 초기 팝업 상태 설정
   const [isPopupOpen, setIsPopupOpen] = useState(() => {
@@ -131,7 +134,7 @@ export default function Home() {
 
         {!isPopupOpen && (
           <div>
-            <h1>{session?.user?.name || 'Your Desk'}</h1>
+            <h1>{`${firstOnly || 'Your'}'s Desk`}</h1>{' '}
             <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
               <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
                 Documents
