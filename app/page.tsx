@@ -134,7 +134,11 @@ export default function Home() {
 
         {!isPopupOpen && (
           <div>
-            <h1>{`${firstOnly || 'Your'}'s Desk`}</h1>{' '}
+            <h1 className="p-2 font-ibm-plex-mono font-bold">
+              {firstOnly
+                ? `${firstOnly}${firstOnly.endsWith('s') ? "'" : "'s"} Desk`
+                : 'Your Desk'}
+            </h1>
             <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
               <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
                 Documents
