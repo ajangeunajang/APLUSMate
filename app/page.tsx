@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -134,11 +134,6 @@ export default function Home() {
 
         {!isPopupOpen && (
           <div>
-            <h1 className="p-2 font-ibm-plex-mono font-bold">
-              {firstOnly
-                ? `${firstOnly}${firstOnly.endsWith('s') ? "'" : "'s"} Desk`
-                : 'Your Desk'}
-            </h1>
             <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
               <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
                 Documents
@@ -150,6 +145,20 @@ export default function Home() {
                 Shop
               </li>
             </ul>
+            <div className="fixed bottom-0 left-0 p-4">
+              <h1 className="inline-block text-gray-400 text-sm p-2 pl-4 pb-4 font-ibm-plex-mono font-bold">
+                {firstOnly
+                  ? `${firstOnly}${firstOnly.endsWith('s') ? "'" : "'s"} Desk`
+                  : 'Your Desk'}
+              </h1>
+
+              <button
+                onClick={() => signOut()}
+                className="cursor-pointer hover:text-gray-600 transition-colors duration-300 font-ibm-plex-mono p-2 text-gray-400 text-sm font-bold"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         )}
       </nav>
@@ -208,13 +217,19 @@ export default function Home() {
                     setIsPopupOpen(false);
                     signIn('google', { callbackUrl: '/' });
                   }}
-                  className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium"
+                  className="w-full flex gap-4 justify-center font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-sm"
                 >
-                  Continue with Google
+                  <img
+                    src="/Google_Favicon_2025.webp"
+                    alt="google"
+                    width={20}
+                    height={20}
+                  />
+                  <div>Continue with Google</div>
                 </button>
               </div>
-              <div className="mt-2 sm:pt-0 w-full hover:opacity-20 transition-opacity duration-300">
-                <button className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium">
+              <div className="mt-2 sm:pt-0 w-full flex gap-4 justify-center hover:opacity-20 transition-opacity duration-300">
+                <button className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-sm">
                   Continue with Apple
                 </button>
               </div>
