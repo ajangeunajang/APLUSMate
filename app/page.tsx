@@ -1,14 +1,31 @@
 'use client';
 import Image from 'next/image';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   console.log(session);
-  const [isPopupOpen, setIsPopupOpen] = useState(true);
+
+  // 로그인 상태에 따라 초기 팝업 상태 설정
+  const [isPopupOpen, setIsPopupOpen] = useState(() => {
+    // 초기 렌더링 시에는 항상 true로 시작 (세션이 로드되기 전까지)
+    return true;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // 세션 상태가 변경될 때마다 팝업 상태 업데이트
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // 로그인된 경우 팝업 닫기
+      setIsPopupOpen(false);
+    } else if (status === 'unauthenticated') {
+      // 로그인 안 된 경우 팝업 열기
+      setIsPopupOpen(true);
+    }
+    // 'loading' 상태는 무시 (세션 로딩 중)
+  }, [status]);
 
   // 파일 처리 로직을 공통 함수로 분리
   const processFile = async (file: File) => {
@@ -114,7 +131,7 @@ export default function Home() {
 
         {!isPopupOpen && (
           <div>
-            <h1>{session?.user?.name || 'Name'}</h1>
+            <h1>{session?.user?.name || 'Your Desk'}</h1>
             <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
               <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
                 Documents
