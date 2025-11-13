@@ -191,7 +191,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] font-sans dark:bg-black">
+    <div className="h-screen w-screen flex items-center justify-center bg-[#F2F2F2] font-sans overflow-hidden">
       <Image
         className="fixed top-8 left-8 z-10"
         src="/logo.svg"
@@ -204,7 +204,7 @@ export default function Home() {
       <nav
         className={`fixed h-full flex flex-col ${
           isLoginPopupOpen
-            ? 'w-1/3  top-0 left-0 justify-center '
+            ? 'w-full sm:w-1/3  top-0 left-0 justify-center '
             : 'w-1/6 top-36 left-8'
         } `}
       >
@@ -242,39 +242,39 @@ export default function Home() {
       </nav>
 
       <section
-        className={`fixed top-20 ${
-          isLoginPopupOpen ? 'left-1/3 w-2/3' : 'left-1/5 w-4/5'
-        } rounded-48  h-full flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
+        className={`fixed h-screen overflow-y-scroll sm:top-20 ${
+          isLoginPopupOpen ? 'left-0 w-full sm:left-1/3 sm:w-2/3' : 'left-1/5 w-4/5'
+        }   flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
       >
-        <div className="rounded-[48px] bg-white dark:bg-black w-full h-full p-8 gap-6 text-center items-start text-left flex flex-col sm:justify-center sm:items-center">
+        <div className="rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center items-start text-left flex flex-col sm:justify-center sm:items-center">
           {isLoginPopupOpen && (
-            <div className="flex flex-col items-center justify-center w-1/2 pb-16">
-              <h1 className="max-w-s text-2xl font-ibm-plex-mono font-medium leading-10 tracking-tight text-black dark:text-zinc-50 mb-16">
+            <div className="flex flex-col overflow-y-scroll items-center justify-start w-full lg:w-1/2 pb-20">
+              <h1 className="max-w-s text-lg sm:text-2xl font-ibm-plex-mono font-medium leading-10 tracking-tight text-black dark:text-zinc-50 mb-12 sm:mb-16">
                 Create Your Space
               </h1>
-              <div className="flex flex-col gap-12 w-full">
+              <div className="flex flex-col gap-6 sm:gap-12 w-full">
                 <div className="flex flex-col gap-4">
-                  <label className="text-sm font-ibm-plex-mono text-black dark:text-zinc-50">
+                  <label className="text-xs sm:text-sm font-ibm-plex-mono text-black dark:text-zinc-50">
                     Name
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
+                    className="font-ibm-plex-mono text-xs sm:text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
                     placeholder="Enter your name"
                     disabled={isRegistering}
                   />
                 </div>
                 <div className="flex flex-col gap-4">
-                  <label className="text-sm font-ibm-plex-mono text-black dark:text-zinc-50">
+                  <label className="text-xs sm:text-sm font-ibm-plex-mono text-black dark:text-zinc-50">
                     Password
                   </label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
+                    className="font-ibm-plex-mono text-xs sm:text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
                     placeholder="Enter your password"
                     disabled={isRegistering}
                     onKeyDown={(e) => {
@@ -285,27 +285,27 @@ export default function Home() {
                   />
                 </div>
               </div>
-              <div className="mt-12 sm:pt-0 w-full">
+              <div className="mt-6 sm:mt-12 sm:pt-0 w-full">
                 <button
                   onClick={handleRegister}
                   disabled={isRegistering}
-                  className="w-full font-ibm-plex-mono bg-gray-600 hover:bg-gray-300 transition-colors duration-300 text-white px-4 py-2 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs sm:text-sm w-full font-ibm-plex-mono bg-gray-600 hover:bg-gray-300 transition-colors duration-300 text-white px-4 py-2 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isRegistering ? 'Take it slow...' : 'Get Started'}
                 </button>
               </div>
-              <p className="text-sm mt-2 font-ibm-plex-mono font-medium text-zinc-500">
+              <p className="text-xs sm:text-sm mt-2 font-ibm-plex-mono font-medium text-zinc-500">
                 Study better with A+MATE
               </p>
-              <div className="mt-12 sm:pt-0 w-full hover:opacity-20 transition-opacity duration-300">
+              <div className="mt-8 sm:mt-12 sm:pt-0 w-full hover:opacity-20 transition-opacity duration-300">
                 <button
                   onClick={() => {
                     setIsLoginPopupOpen(false);
                     signIn('google', { callbackUrl: '/' });
                   }}
-                  className="w-full flex gap-4 justify-center font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-sm"
+                  className="w-full flex gap-4 justify-center font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-xs sm:text-sm"
                 >
-                  <div className="w-5 h-5">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5">
                     <svg
                       className="w-full h-full"
                       width="45"
@@ -446,7 +446,7 @@ export default function Home() {
                 </button>
               </div>
               <div className="mt-2 sm:pt-0 w-full flex gap-4 justify-center hover:opacity-20 transition-opacity duration-300">
-                <button className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-sm">
+                <button className="w-full font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-xs sm:text-sm">
                   Continue with Apple
                 </button>
               </div>
