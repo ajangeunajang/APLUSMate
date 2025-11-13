@@ -105,7 +105,7 @@ export default function Home() {
     await processFile(file);
   };
 
-  // 회원가입 핸들러
+  // 회원가입 핸들
   const handleRegister = async () => {
     if (!name.trim() || !password.trim()) {
       alert('이름과 비밀번호를 모두 입력해주세요.');
@@ -135,7 +135,7 @@ export default function Home() {
             : null) ||
           (typeof data === 'string' ? data : null) ||
           '회원가입에 실패했습니다.';
-        // alert('회원가입에 실패했습니다');
+        alert(errorMessage);
         return;
       }
 
