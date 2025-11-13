@@ -1,12 +1,13 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import type { NextAuthOptions } from 'next-auth';
 
 // 환경 변수 검증
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-const nextAuthUrl = process.env.NEXTAUTH_URL;
+const backendUrl = process.env.BACKEND_URL || 'http://104.198.57.165:8002';
 
 if (!googleClientId) {
   throw new Error('GOOGLE_CLIENT_ID is not set in environment variables');
@@ -23,6 +24,51 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: googleClientId,
       clientSecret: googleClientSecret,
+    }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        user_id: { label: 'User ID', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.user_id || !credentials?.password) {
+          console.error('Missing credentials');
+          return null;
+        }
+
+        try {
+          // FastAPI 백엔드에 직접 요청
+          const response = await fetch(`${backendUrl}/users/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: credentials.user_id,
+              password: credentials.password,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            console.error('Login failed:', error);
+            return null;
+          }
+
+          const user = await response.json();
+          
+          // 사용자 정보 반환
+          return {
+            id: user.id || credentials.user_id,
+            name: user.name || credentials.user_id,
+            email: user.email || `${credentials.user_id}@aplusmate.local`,
+          };
+        } catch (error) {
+          console.error('Credentials authorization error:', error);
+          return null;
+        }
+      },
     }),
   ],
 

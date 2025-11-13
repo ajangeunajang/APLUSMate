@@ -2,22 +2,24 @@
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
+import LandingMessage from './components/LandingMessage';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const fullName = (session?.user?.name || '').trim();
   const firstOnly = fullName.split(/\s+/)[0] || '';
 
-  // 로그인 상태에 따라 초기 팝업 상태 설정
-  const [isPopupOpen, setIsPopupOpen] = useState(() => {
-    // 초기 렌더링 시에는 항상 true로 시작 (세션이 로드되기 전까지)
+  // 로그인 상태에 따라 초기 팝업
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(() => {
+    // 초기 렌더링 시에는 항상 true 시작 (세션이 로드되기 전까지)
     return true;
   });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 회원가입용 state 추가
+  // 회원가입용 state
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -26,10 +28,10 @@ export default function Home() {
   useEffect(() => {
     if (status === 'authenticated') {
       // 로그인된 경우 팝업 닫기
-      setIsPopupOpen(false);
+      setIsLoginPopupOpen(false);
     } else if (status === 'unauthenticated') {
       // 로그인 안 된 경우 팝업 열기
-      setIsPopupOpen(true);
+      setIsLoginPopupOpen(true);
     }
     // 'loading' 상태는 무시 (세션 로딩 중)
   }, [status]);
@@ -105,10 +107,10 @@ export default function Home() {
     await processFile(file);
   };
 
-  // 회원가입 핸들
+  // 회원가입 핸들러
   const handleRegister = async () => {
     if (!name.trim() || !password.trim()) {
-      alert('이름과 비밀번호를 모두 입력해주세요.');
+      alert('아이디와 비밀번호를 모두 입력해주세요.');
       return;
     }
 
@@ -135,6 +137,26 @@ export default function Home() {
             : null) ||
           (typeof data === 'string' ? data : null) ||
           '회원가입에 실패했습니다.';
+        
+        // User ID already registered 에러면 자동 로그인
+        if (errorMessage.includes('already registered') || errorMessage.includes('User ID already')) {
+          const loginResult = await signIn('credentials', {
+            user_id: name.trim(),
+            password: password.trim(),
+            redirect: false,
+          });
+
+          if (loginResult?.ok) {
+            setName('');
+            setPassword('');
+            setIsLoginPopupOpen(false);
+            return;
+          } else {
+            alert('로그인에 실패했습니다. 다시 로그인해주세요.');
+            return;
+          }
+        }
+        
         alert(errorMessage);
         return;
       }
@@ -145,7 +167,21 @@ export default function Home() {
           ? data.message
           : null) || '회원가입이 성공적으로 완료되었습니다.';
       alert(message);
-      setIsPopupOpen(false);
+      
+      // 회원가입 성공 시 자동 로그인
+      const loginResult = await signIn('credentials', {
+        user_id: name.trim(),
+        password: password.trim(),
+        redirect: false,
+      });
+
+      if (loginResult?.ok) {
+        setName('');
+        setPassword('');
+        setIsLoginPopupOpen(false);
+      } else {
+        alert('로그인에 실패했습니다. 다시 로그인해주세요.');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       alert('서버에 연결할 수 없습니다.');
@@ -167,26 +203,14 @@ export default function Home() {
 
       <nav
         className={`fixed h-full flex flex-col ${
-          isPopupOpen
+          isLoginPopupOpen
             ? 'w-1/3  top-0 left-0 justify-center '
             : 'w-1/6 top-36 left-8'
         } `}
       >
-        {isPopupOpen && (
-          <div className="flex flex-col gap-8 p-8">
-            <h1 className="max-w-s text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-              PDF 창, 챗봇 창을 <br />
-              번갈아가며 공부하고 있나요?
-            </h1>
-            <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-              이제 수업자료에서 바로 AI에게 질문하세요.{' '}
-              <br className="hidden sm:block" />
-              페이지별 질문, 대화 저장으로 공부 흐름이 끊기지 않습니다.
-            </p>
-          </div>
-        )}
+        {isLoginPopupOpen && <LandingMessage />}
 
-        {!isPopupOpen && (
+        {!isLoginPopupOpen && (
           <div>
             <ul className="flex flex-col gap-2 font-ibm-plex-mono font-medium">
               <li className="bg-[#D9D9D9] px-4 py-2 rounded-lg w-full">
@@ -219,11 +243,11 @@ export default function Home() {
 
       <section
         className={`fixed top-20 ${
-          isPopupOpen ? 'left-1/3 w-2/3' : 'left-1/5 w-4/5'
+          isLoginPopupOpen ? 'left-1/3 w-2/3' : 'left-1/5 w-4/5'
         } rounded-48  h-full flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
       >
         <div className="rounded-[48px] bg-white dark:bg-black w-full h-full p-8 gap-6 text-center items-start text-left flex flex-col sm:justify-center sm:items-center">
-          {isPopupOpen && (
+          {isLoginPopupOpen && (
             <div className="flex flex-col items-center justify-center w-1/2 pb-16">
               <h1 className="max-w-s text-2xl font-ibm-plex-mono font-medium leading-10 tracking-tight text-black dark:text-zinc-50 mb-16">
                 Create Your Space
@@ -237,7 +261,7 @@ export default function Home() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
+                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
                     placeholder="Enter your name"
                     disabled={isRegistering}
                   />
@@ -250,7 +274,7 @@ export default function Home() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
+                    className="font-ibm-plex-mono text-sm  pb-2 border-b-2 bg-transparent border-black focus:outline-none bg-white dark:bg-black text-black dark:text-zinc-50"
                     placeholder="Enter your password"
                     disabled={isRegistering}
                     onKeyDown={(e) => {
@@ -267,16 +291,16 @@ export default function Home() {
                   disabled={isRegistering}
                   className="w-full font-ibm-plex-mono bg-gray-600 hover:bg-gray-300 transition-colors duration-300 text-white px-4 py-2 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isRegistering ? 'Creating...' : 'Get Started'}
+                  {isRegistering ? 'Take it slow...' : 'Get Started'}
                 </button>
               </div>
               <p className="text-sm mt-2 font-ibm-plex-mono font-medium text-zinc-500">
-                Already have an account? <a href="/login">Login</a>
+                Study better with A+MATE
               </p>
               <div className="mt-12 sm:pt-0 w-full hover:opacity-20 transition-opacity duration-300">
                 <button
                   onClick={() => {
-                    setIsPopupOpen(false);
+                    setIsLoginPopupOpen(false);
                     signIn('google', { callbackUrl: '/' });
                   }}
                   className="w-full flex gap-4 justify-center font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-sm"
@@ -428,7 +452,7 @@ export default function Home() {
               </div>
             </div>
           )}
-          {!isPopupOpen && (
+          {!isLoginPopupOpen && (
             <>
               <input
                 ref={fileInputRef}
