@@ -129,15 +129,23 @@ export default function Home() {
 
       // FastAPI가 에러 반환
       if (!response.ok) {
-        return Response.json(data, { status: response.status });
+        const errorMessage =
+          (typeof data === 'object' && data !== null && 'detail' in data
+            ? data.detail
+            : null) ||
+          (typeof data === 'string' ? data : null) ||
+          '회원가입에 실패했습니다.';
+        alert(errorMessage);
+        return;
       }
 
-      // 성공? 클라이언트에서 data.message 접근
-      // FastAPI 응답에 message 없어도 default message 포함 반환
-      const successData = data.message
-        ? data
-        : { message: '회원가입이 성공적으로 완료되었습니다.', ...data };
-      return Response.json(successData, { status: 201 });
+      // 성공 메시지 안내
+      const message =
+        (typeof data === 'object' && data !== null && 'message' in data
+          ? data.message
+          : null) || '회원가입이 성공적으로 완료되었습니다.';
+      alert(message);
+      setIsPopupOpen(false);
     } catch (error) {
       console.error('Registration error:', error);
       alert('서버에 연결할 수 없습니다.');
