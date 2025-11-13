@@ -11,12 +11,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    // 백엔드 서버 전달
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) {
+      return NextResponse.json(
+        { error: '백엔드 서버 URL이 설정되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
 
-    // 백엔드 서버로 파일 전달
     const backendFormData = new FormData();
     backendFormData.append('pdf_file', file);
 
-    const response = await fetch('http://104.198.57.165:8002/pdfs/upload', {
+    const response = await fetch(`${backendUrl}/pdfs/upload`, {
       method: 'POST',
       body: backendFormData,
     });
