@@ -129,13 +129,13 @@ export default function Home() {
 
       // FastAPI가 에러 반환
       if (!response.ok) {
-        // const errorMessage =
-        //   (typeof data === 'object' && data !== null && 'detail' in data
-        //     ? data.detail
-        //     : null) ||
-        //   (typeof data === 'string' ? data : null) ||
-        //   '회원가입에 실패했습니다.';
-        alert('회원가입에 실패했습니다');
+        const errorMessage =
+          (typeof data === 'object' && data !== null && 'detail' in data
+            ? data.detail
+            : null) ||
+          (typeof data === 'string' ? data : null) ||
+          '회원가입에 실패했습니다.';
+        // alert('회원가입에 실패했습니다');
         return;
       }
 
