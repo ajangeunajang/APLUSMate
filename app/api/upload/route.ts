@@ -4,6 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('pdf_file') as File;
+    const userId = formData.get('user_id') as string;
 
     if (!file) {
       return NextResponse.json(
@@ -11,6 +12,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'user_id가 제공되지 않았습니다.' },
+        { status: 400 }
+      );
+    }
+
     // 백엔드 서버 전달
     const backendUrl = process.env.BACKEND_URL;
     if (!backendUrl) {
@@ -22,8 +31,9 @@ export async function POST(request: NextRequest) {
 
     const backendFormData = new FormData();
     backendFormData.append('pdf_file', file);
+    backendFormData.append('user_id', userId);
 
-    const response = await fetch(`${backendUrl}/pdfs/upload`, {
+    const response = await fetch(`${backendUrl}/pdfs/upload?user_id=${userId}`, {
       method: 'POST',
       body: backendFormData,
     });
