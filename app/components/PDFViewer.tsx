@@ -14,7 +14,7 @@ export default function PDFViewer({ filePath, fileName }: PDFViewerProps) {
   return (
     <div className="h-screen w-screen flex flex-col bg-[#F2F2F2]">
       {/* 헤더 */}
-      <div className="bg-white p-4 flex items-center justify-between border-b">
+      <div className="  p-4 flex items-center justify-between ">
         <div className="flex items-center gap-4">
           <a href="/" className="hover:opacity-70">
             <Image src="/logo.svg" alt="logo" width={130} height={30} />
