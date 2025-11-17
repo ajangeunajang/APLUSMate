@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import LandingMessage from './components/LandingMessage';
 
@@ -28,24 +28,12 @@ export default function Home() {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
   const [showUploadSuccess, setShowUploadSuccess] = useState(false);
 
-  // 회원가입용 state
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
 
-  // 세션 상태가 변경될 때마다 팝업 상태 업데이트
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
-      // 로그인된 경우 팝업 닫기
-      setIsLoginPopupOpen(false);
-      fetchPdfFiles();
-    } else if (status === 'unauthenticated') {
-      setIsLoginPopupOpen(true);
-    }
-  }, [status, session?.user?.id]); // session?.user?.id 의존성 추가
-
   // 사용자 PDF 파일 목록 조회
-  const fetchPdfFiles = async () => {
+  const fetchPdfFiles = useCallback(async () => {
     try {
       const userId = session?.user?.id || (session?.user?.name || '').trim();
       if (!userId) {
@@ -53,18 +41,14 @@ export default function Home() {
         return;
       }
 
-      console.log('fetchPdfFiles 호출 - userId:', userId);
       const response = await fetch(`/api/pdfs/my_pdfs?user_id=${encodeURIComponent(userId)}`, {
         method: 'GET',
       });
-
-      console.log('응답 상태:', response.status);
 
       if (response.ok) {
         const data = await response.json();
         const files = Array.isArray(data) ? data : data.pdfs || [];
         setPdfFiles(files);
-        console.log('✅ PDF 파일 로드 성공:', files.length, '개');
         return;
       } else {
         const errorText = await response.text();
@@ -73,7 +57,18 @@ export default function Home() {
     } catch (error) {
       console.error('PDF 파일 목록 조회 중 예외:', error);
     }
-  };
+  }, [session?.user?.id, session?.user?.name]);
+
+  // 세션 상태 변경될 때마다 팝업 상태 업데이트
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.id) {
+      // 로그인된 경우 팝업 닫기
+      setIsLoginPopupOpen(false);
+      fetchPdfFiles();
+    } else if (status === 'unauthenticated') {
+      setIsLoginPopupOpen(true);
+    }
+  }, [status, session?.user?.id, fetchPdfFiles]);
 
   // 파일 처리 공통 함수로 분리
   const processFile = async (file: File) => {
@@ -85,7 +80,7 @@ export default function Home() {
     setIsUploading(true);
     const formData = new FormData();
     formData.append('pdf_file', file);
-    formData.append('user_id', fullName); // session의 user 이름 추가
+    formData.append('user_id', session?.user?.id || (session?.user?.name || '').trim());
 
     try {
       const response = await fetch('/api/upload', {
@@ -363,6 +358,7 @@ export default function Home() {
               </div>
             </div>
           )}
+          {/* 로그인 시 유저 pdf 목록 불러오기 */}
           {!isLoginPopupOpen && (
             <>
               <input
@@ -380,7 +376,7 @@ export default function Home() {
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`hover:opacity-20 transition-opacity duration-300 w-full h-64 flex flex-col items-center justify-center gap-2 ${
+                  className={`hover:opacity-20 transition-opacity duration-300 w-full aspect-3/2 flex flex-col items-center justify-center gap-2 ${
                     isUploading ? 'cursor-wait opacity-50' : 'cursor-pointer'
                   } ${isDragging ? 'opacity-10 border-blue-800' : ''}`}
                   role="button"
@@ -422,8 +418,10 @@ export default function Home() {
                     href={pdf.file_path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full h-64 border-2 border-black rounded-[24px] p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-100 transition-colors duration-300 cursor-pointer"
+                    className="w-full aspect-3/2 flex flex-col items-center justify-start gap-2 transition-colors duration-300 cursor-pointer"
                   >
+                    <div
+                      className="w-full h-full bg-gray-100 rounded-[24px] p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
                     <svg
                       width="40"
                       height="40"
@@ -434,13 +432,14 @@ export default function Home() {
                     >
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                    <h3 className="font-ibm-plex-mono font-medium text-xs text-center truncate w-full">
+                    </svg></div>
+                    <div>
+                    <h3 className="font-ibm-plex-mono font-medium text-xs text-center leading-loose truncate w-full">
                       {pdf.filename}
                     </h3>
                     <p className="font-ibm-plex-mono text-xs text-gray-500">
                       {new Date(pdf.upload_time).toLocaleDateString()}
-                    </p>
+                    </p></div>
                   </a>
                 ))}
               </div>
