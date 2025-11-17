@@ -18,10 +18,12 @@ export default function PDFPage() {
   const publicId = pathSegments[0] ?? '';
   const labelSegment = pathSegments.slice(1).join(' / ');
 
+  const [chatOpen, setChatOpen] = useState(false);
   const [fileName, setFileName] = useState('PDF Document');
   const [refreshCount, setRefreshCount] = useState(0);
   const [status, setStatus] = useState<ViewStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     if (!publicId) {
@@ -44,7 +46,22 @@ export default function PDFPage() {
   useEffect(() => {
     if (!publicId) return;
     setRefreshCount(0);
+    // localStorage에서 노트 불러오기
+    const savedNote = localStorage.getItem(`pdf-note-${publicId}`);
+    if (savedNote) {
+      setNote(savedNote);
+    } else {
+      setNote('');
+    }
   }, [publicId]);
+
+  // 노트 저장 함수
+  const handleNoteChange = (value: string) => {
+    setNote(value);
+    if (publicId) {
+      localStorage.setItem(`pdf-note-${publicId}`, value);
+    }
+  };
 
   const baseStreamUrl = publicId
     ? `/api/pdfs/${encodeURIComponent(publicId)}`
@@ -67,25 +84,20 @@ export default function PDFPage() {
   return (
     <div className="min-h-screen w-full bg-[#F2F2F2] flex flex-col">
       <header className="px-4 py-3 md:px-8 md:py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between ">
-        <div className="flex items-center gap-4 min-w-0">
-          <Image
-            className="fixed top-8 left-8 z-10"
-            src="/logo.svg"
-            alt="logo"
-            width={130}
-            height={30}
-            priority
-          />
-          {/* <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-gray-400 font-semibold mb-1">
-              PDF Viewer
-            </p>
-            <h1 className="font-ibm-plex-mono text-sm md:text-base text-gray-900 truncate">
-              {fileName}
-            </h1>
-          </div> */}
-        </div>
-
+        <button onClick={() => router.back()}>
+          <svg
+            width="19"
+            height="37"
+            viewBox="0 0 19 37"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18.3848 0.353581L0.707108 18.0312L18.3848 35.7089"
+              stroke="#545454"
+            />
+          </svg>
+        </button>
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`px-3 py-1 text-xs font-medium rounded-full ${
@@ -115,18 +127,12 @@ export default function PDFPage() {
           >
             다운로드
           </button>
-          <button
-            onClick={() => router.back()}
-            className="px-3 py-1.5 text-xs md:text-sm border border-transparent rounded-lg text-gray-600 hover:text-gray-900"
-          >
-            ← PDF목록
-          </button>
         </div>
       </header>
 
       <main className="flex-1 p-4 md:p-6 flex flex-col gap-4">
         {status === 'error' ? (
-          <div className="flex-1 bg-white border border-rose-100 rounded-2xl flex flex-col items-center justify-center text-center gap-4 p-8 shadow-sm">
+          <div className="flex-1 bg-white border border-rose-100 rounded-2xl flex flex-col items-center justify-center text-center gap-4 p-8">
             <p className="text-base font-semibold text-rose-600">
               PDF를 불러오지 못했습니다.
             </p>
@@ -150,7 +156,7 @@ export default function PDFPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
+          <div className="flex-1 rounded-2xl border border-gray-200 bg-white overflow-hidden relative">
             {status !== 'ready' && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/85 backdrop-blur-sm">
                 <div className="h-10 w-10 rounded-full border-2 border-gray-200 border-t-gray-900 animate-spin" />
@@ -177,36 +183,42 @@ export default function PDFPage() {
           </div>
         )}
 
-        <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-6 text-sm text-gray-600">
-          <h2 className="text-gray-900 font-semibold mb-3 text-base">
-            API 메모
-          </h2>
-          {/* <dl className="grid gap-3 text-sm">
-            <div className="flex flex-col gap-1">
-              <dt className="text-gray-400 uppercase tracking-[0.3em] text-[11px]">
-                Endpoint
-              </dt>
-              <dd className="font-ibm-plex-mono text-gray-900">{`GET /pdfs/{public_id}`}</dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-gray-400 uppercase tracking-[0.3em] text-[11px]">
-                Public ID
-              </dt>
-              <dd className="font-ibm-plex-mono text-gray-900">
-                {publicId || '—'}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-gray-400 uppercase tracking-[0.3em] text-[11px]">
-                Content-Type
-              </dt>
-              <dd className="font-ibm-plex-mono text-gray-900">
-                application/pdf
-              </dd>
-            </div>
-          </dl> */}
+        <section className="rounded-2xl p-4 md:p-6">
+          <textarea
+            value={note}
+            onChange={(e) => handleNoteChange(e.target.value)}
+            placeholder="노트를 입력하세요."
+            className="w-full min-h-[120px] text-sm text-gray-900 rounded-lg resize-y focus:outline-none focus:ring-gray-900 focus:border-transparent transition-colors placeholder:text-gray-400"
+            rows={5}
+          />
+          {note && (
+            <div className="mt-2 text-xs text-gray-500">자동 저장됨</div>
+          )}
         </section>
       </main>
+
+      <section>
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          className="fixed shadow-xl bottom-8 right-8 z-10 bg-white h-1/10 aspect-square p-3 rounded-full transition-color duration-300 hover:bg-gray-200"
+        >
+          <Image
+            className=""
+            src="/logo.svg"
+            alt="logo"
+            width={100}
+            height={30}
+            priority
+          />
+          {chatOpen && (
+            <div className="fixed w-[30vw] h-full top-0 right-0 p-6 pt-12 z-40">
+              <div className="w-full h-full bg-white rounded-[48px] ">
+                <p className="font-semibold mb-2">AI Chat</p>
+              </div>
+            </div>
+          )}
+        </button>
+      </section>
     </div>
   );
 }
