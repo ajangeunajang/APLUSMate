@@ -1,8 +1,9 @@
 export async function POST(req) {
   try {
     const body = await req.json();
+    const backendUrl = process.env.BACKEND_URL;
 
-    const response = await fetch('http://104.198.57.165:8002/users/register', {
+    const response = await fetch(`${backendUrl}/users/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

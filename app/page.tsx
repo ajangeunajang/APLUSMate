@@ -35,66 +35,43 @@ export default function Home() {
 
   // 세션 상태가 변경될 때마다 팝업 상태 업데이트
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && session?.user?.id) {
       // 로그인된 경우 팝업 닫기
       setIsLoginPopupOpen(false);
       fetchPdfFiles();
     } else if (status === 'unauthenticated') {
       setIsLoginPopupOpen(true);
     }
-  }, [status]);
+  }, [status, session?.user?.id]); // session?.user?.id 의존성 추가
 
-  // 사용자 PDF 파일 목록 조회 (URL에 user id 노출하지 않음)
+  // 사용자 PDF 파일 목록 조회
   const fetchPdfFiles = async () => {
     try {
-      // fullName 대신 session?.user?.name 사용 (더 안정적)
-      const userId = (session?.user?.name || '').trim();
+      const userId = session?.user?.id || (session?.user?.name || '').trim();
       if (!userId) {
         console.warn('fetchPdfFiles: User ID가 없습니다.');
         return;
       }
 
-      const candidates = ['/api/my_pdfs', '/api/pdfs/my_pdfs', '/pdfs/my_pdfs'];
+      console.log('fetchPdfFiles 호출 - userId:', userId);
+      const response = await fetch(`/api/pdfs/my_pdfs?user_id=${encodeURIComponent(userId)}`, {
+        method: 'GET',
+      });
 
-      let lastError: any = null;
-      for (const url of candidates) {
-        console.log('fetchPdfFiles 호출:', url);
-        try {
-          const response = await fetch(url, {
-            method: 'POST', // GET 쿼리 대신 POST로 user_id 전송
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ user_id: userId }), // user id는 body에만 포함
-          });
+      console.log('응답 상태:', response.status);
 
-          if (response.ok) {
-            const data = await response.json();
-            const files = Array.isArray(data) ? data : data.pdfs || [];
-            setPdfFiles(files);
-            return;
-          } else {
-            console.warn(
-              'fetch 실패, status:',
-              response.status,
-              'endpoint:',
-              url
-            );
-            lastError = { status: response.status, endpoint: url };
-            if (response.status === 404) continue;
-            // 404 이외 에러면 로그 후 다음 후보 시도
-            continue;
-          }
-        } catch (err) {
-          console.warn('fetch 예외:', err, 'endpoint:', url);
-          lastError = err;
-          continue;
-        }
+      if (response.ok) {
+        const data = await response.json();
+        const files = Array.isArray(data) ? data : data.pdfs || [];
+        setPdfFiles(files);
+        console.log('✅ PDF 파일 로드 성공:', files.length, '개');
+        return;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ PDF 로드 실패 - Status:', response.status, 'Body:', errorText);
       }
-
-      console.error('모든 후보 엔드포인트 호출 실패:', lastError);
     } catch (error) {
-      console.error('PDF 파일 목록 조회 실패:', error);
+      console.error('PDF 파일 목록 조회 중 예외:', error);
     }
   };
 
@@ -311,7 +288,7 @@ export default function Home() {
           isLoginPopupOpen ? 'sm:left-1/3 sm:w-2/3' : 'sm:left-1/5 sm:w-4/5'
         }   flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
       >
-        <div className="rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center items-start flex flex-col sm:items-center">
+        <div className={`rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center flex flex-col items-center ${isLoginPopupOpen ? 'justify-center' : 'justify-start' }`}>
           {isLoginPopupOpen && (
             <div className="flex flex-col overflow-y-scroll items-center justify-start w-full lg:w-1/2 pb-20">
               <h1 className="max-w-s text-lg sm:text-2xl font-ibm-plex-mono font-medium leading-10 tracking-tight text-black dark:text-zinc-50 mb-12 sm:mb-16">

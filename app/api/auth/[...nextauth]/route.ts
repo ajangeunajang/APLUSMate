@@ -7,7 +7,7 @@ import type { NextAuthOptions } from 'next-auth';
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-const backendUrl = process.env.BACKEND_URL || 'http://104.198.57.165:8002';
+const backendUrl = process.env.BACKEND_URL;
 
 if (!googleClientId) {
   throw new Error('GOOGLE_CLIENT_ID is not set in environment variables');
