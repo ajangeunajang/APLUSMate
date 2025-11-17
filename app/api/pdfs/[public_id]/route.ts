@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 type RouteParams = {
-  params: {
-    public_id?: string;
-  };
+  params: Promise<{
+    public_id: string;
+  }>;
 };
 
 const buildValidationError = (loc: string, msg: string) => ({
@@ -17,7 +17,8 @@ const buildValidationError = (loc: string, msg: string) => ({
 });
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const publicId = params.public_id;
+  const { public_id } = await params;
+  const publicId = public_id;
 
   if (!publicId) {
     return NextResponse.json(buildValidationError('path.public_id', 'Field required'), {
