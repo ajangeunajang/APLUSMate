@@ -1,31 +1,34 @@
-'use client';
+"use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
 
 export default function AiChat() {
-    const [chatOpen, setChatOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
+  const [chatOpen, setChatOpen] = useState(true);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
+    []
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
     }
   };
 
   const handleSend = () => {
     if (message.trim()) {
-      setMessages([...messages, { text: message, sender: 'user' }]);
-      setMessage('');
+      setMessages([...messages, { text: message, sender: "user" }]);
+      setMessage("");
       adjustHeight();
-      // 여기에서 AI 응답을 처리할 수 있음 (예: API 호출)
+      // 여기서 AI 응답 처리  API 호출)
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -33,6 +36,23 @@ export default function AiChat() {
 
   return (
     <div className="fixed right-0 bottom-0">
+      {/* 토글 */}
+      <button
+        onClick={() => setChatOpen(!chatOpen)}
+        className={`fixed bottom-8 right-8 bg-white h-1/10 aspect-square p-3 rounded-full transition-all duration-300 hover:bg-gray-200 ${
+          chatOpen ? "" : "z-50 shadow-lg"
+        }`}
+      >
+        <Image
+          className=""
+          src="/logo.svg"
+          alt="logo"
+          width={100}
+          height={30}
+          priority
+        />
+      </button>
+
       <div
         className={`fixed p-8 overflow-hidden transition-all duration-300 ${
           chatOpen
@@ -41,14 +61,23 @@ export default function AiChat() {
         }`}
       >
         <div className="w-full h-full bg-white rounded-[48px] p-8 flex flex-col">
-          <Image
-            className=""
-            src="/logo.svg"
-            alt="logo"
-            width={100}
-            height={30}
-            priority
-          />{" "}
+          <div className="flex justify-between">
+            <Image
+              className=""
+              src="/logo.svg"
+              alt="logo"
+              width={100}
+              height={30}
+              priority
+            />
+
+            <button
+              onClick={() => setChatOpen(!chatOpen)}
+              className="font-medium font-ibm-plex-mono text-sm"
+            >
+              Close
+            </button>
+          </div>
           <h2
             className={`relative top-1/3 font-ibm-plex-mono transition-opacity duration-300 font-medium text-center mb-12 ${
               messages.length === 0 ? "opacity-100" : "opacity-0"
@@ -129,19 +158,6 @@ export default function AiChat() {
           </div>
         </div>
       </div>
-      <button
-        onClick={() => setChatOpen(!chatOpen)}
-        className="fixed shadow-xl bottom-8 right-8 z-10 bg-white h-1/10 aspect-square p-3 rounded-full transition-color duration-300 hover:bg-gray-200"
-      >
-        <Image
-          className=""
-          src="/logo.svg"
-          alt="logo"
-          width={100}
-          height={30}
-          priority
-        />
-      </button>
     </div>
   );
 }

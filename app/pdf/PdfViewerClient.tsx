@@ -39,10 +39,7 @@ export default function PdfViewerClient({ publicId }: Props) {
     <div className="w-screen h-screen">
       <iframe
         src={pdfUrl}
-        style={{
-          width: `${scale * 100}%`,
-          height: `${scale * 80}%`,
-        }}
+        className={`w-[70%] h-[70%]`}
         title="PDF Viewer"
       />
     </div>
