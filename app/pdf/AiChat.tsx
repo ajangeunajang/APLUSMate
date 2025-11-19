@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useState, useRef } from "react";
 
 export default function AiChat() {
+    const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -32,7 +33,13 @@ export default function AiChat() {
 
   return (
     <div className="fixed right-0 bottom-0">
-      <div className="fixed w-[30vw] min-w-[450px] h-full top-0 right-0 p-8">
+      <div
+        className={`fixed p-8 overflow-hidden transition-all duration-300 ${
+          chatOpen
+            ? "bottom-0 right-0 w-[30vw] min-w-[450px] h-full"
+            : "bottom-12 right-12 w-[50px] h-[50px]"
+        }`}
+      >
         <div className="w-full h-full bg-white rounded-[48px] p-8 flex flex-col">
           <Image
             className=""
@@ -42,17 +49,19 @@ export default function AiChat() {
             height={30}
             priority
           />{" "}
-
-          <h2 className="font-ibm-plex-mono font-medium text-center mb-4">
+          <h2
+            className={`relative top-1/3 font-ibm-plex-mono transition-opacity duration-300 font-medium text-center mb-12 ${
+              messages.length === 0 ? "opacity-100" : "opacity-0"
+            }`}
+          >
             Any Questions?
           </h2>
-
           {/* 채팅 버블 */}
           <div className="flex-1 overflow-y-auto mb-4">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`mb-2 p-3 px-4 ml-auto rounded-[24px] w-5/6 ${
+                className={`mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 ${
                   msg.sender === "user"
                     ? "bg-[#F2F2F2] text-left"
                     : "bg-gray-100"
@@ -63,19 +72,26 @@ export default function AiChat() {
             ))}
           </div>
           {/* 입력창 */}
-          <div className="relative">
+          <div
+            className={`relative transition-all duration-300 ${
+              messages.length === 0 ? "bottom-1/2 mx-10" : "bottom-0"
+            }`}
+          >
             <textarea
               ref={textareaRef}
               value={message}
-              onChange={(e) => { setMessage(e.target.value); adjustHeight(); }}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                adjustHeight();
+              }}
               onKeyPress={handleKeyPress}
               placeholder="무엇이든 물어보세요"
               rows={1}
-              className="max-h-[200px] w-full flex-1 py-2 pl-4 pr-12 border border-black rounded-[24px] focus:outline-none resize-none overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+              className={`max-h-[200px] min-h-[3rem] w-full flex-1 py-2 pt-3 pl-4 pr-12 border border-black rounded-[24px] focus:outline-none resize-none overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 `}
             />
             <button
               onClick={handleSend}
-              className="absolute right-0 top-0 p-3 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
+              className="absolute right-0 top-0 p-4 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
             >
               <svg
                 width="23"
@@ -90,11 +106,31 @@ export default function AiChat() {
                 />
               </svg>
             </button>
+            <div className="text-center text-sm font-medium flex items-center justify-center mt-4 gap-4">
+              <svg
+                width="40"
+                height="21"
+                viewBox="0 0 40 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="0.5"
+                  y="0.5"
+                  width="39"
+                  height="20"
+                  rx="2.5"
+                  stroke="black"
+                  stroke-dasharray="5 5"
+                />
+              </svg>
+              부분 선택 후 질문하기
+            </div>
           </div>
         </div>
       </div>
-      {/* <button
-        // onClick={() => setChatOpen(!chatOpen)}
+      <button
+        onClick={() => setChatOpen(!chatOpen)}
         className="fixed shadow-xl bottom-8 right-8 z-10 bg-white h-1/10 aspect-square p-3 rounded-full transition-color duration-300 hover:bg-gray-200"
       >
         <Image
@@ -105,7 +141,7 @@ export default function AiChat() {
           height={30}
           priority
         />
-      </button> */}
+      </button>
     </div>
   );
 }
