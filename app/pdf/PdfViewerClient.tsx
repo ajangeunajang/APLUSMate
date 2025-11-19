@@ -131,7 +131,7 @@ export default function PdfViewerClient({ publicId }: Props) {
               disabled={currentPage === 1}
               className="px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              이전
+              prev
             </button>
             <div className="">
               <span>
@@ -146,14 +146,14 @@ export default function PdfViewerClient({ publicId }: Props) {
               disabled={currentPage === numPages}
               className="px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              다음
+              next
             </button>
           </div>
           <div className="text-center">
             <Document
               file={pdfUrl}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              loading={<div className="text-gray-500 p-8">Loading PDF...</div>}
+              loading={<div className="min-h-[50vh] text-gray-500 p-8">Loading PDF...</div>}
               error={
                 <div className="text-red-500 p-4">
                   <p>Failed to load PDF file.</p>
@@ -183,7 +183,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                     onClick={() => handleNoteChange(currentPage, "")}
                     className="text-red-500 hover:text-red-700"
                   >
-                    지우기
+                    Delete Note
                   </button>
                 )}
               </div>
