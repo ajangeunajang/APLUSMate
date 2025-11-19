@@ -1,8 +1,8 @@
-'use client';
-import Image from 'next/image';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import LandingMessage from './components/LandingMessage';
+"use client";
+import Image from "next/image";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import LandingMessage from "./components/LandingMessage";
 
 interface PDFFile {
   public_id: string;
@@ -15,8 +15,8 @@ interface PDFFile {
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const fullName = (session?.user?.name || '').trim();
-  const firstOnly = fullName.split(/\s+/)[0] || '';
+  const fullName = (session?.user?.name || "").trim();
+  const firstOnly = fullName.split(/\s+/)[0] || "";
 
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(() => {
     return true;
@@ -28,23 +28,23 @@ export default function Home() {
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
   const [showUploadSuccess, setShowUploadSuccess] = useState(false);
 
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
 
   // 사용자 PDF 파일 목록 조회
   const fetchPdfFiles = useCallback(async () => {
     try {
-      const userId = session?.user?.id || (session?.user?.name || '').trim();
+      const userId = session?.user?.id || (session?.user?.name || "").trim();
       if (!userId) {
-        console.warn('fetchPdfFiles: User ID가 없습니다.');
+        console.warn("fetchPdfFiles: User ID가 없습니다.");
         return;
       }
 
       const response = await fetch(
         `/api/pdfs/my_pdfs?user_id=${encodeURIComponent(userId)}`,
         {
-          method: 'GET',
+          method: "GET",
         }
       );
 
@@ -56,52 +56,52 @@ export default function Home() {
       } else {
         const errorText = await response.text();
         console.error(
-          '❌ PDF 로드 실패 - Status:',
+          "❌ PDF 로드 실패 - Status:",
           response.status,
-          'Body:',
+          "Body:",
           errorText
         );
       }
     } catch (error) {
-      console.error('PDF 파일 목록 조회 중 예외:', error);
+      console.error("PDF 파일 목록 조회 중 예외:", error);
     }
   }, [session?.user?.id, session?.user?.name]);
 
   // 세션 상태 변경될 때마다 팝업 상태 업데이트
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
+    if (status === "authenticated" && session?.user?.id) {
       // 로그인된 경우 팝업 닫기
       setIsLoginPopupOpen(false);
       fetchPdfFiles();
-    } else if (status === 'unauthenticated') {
+    } else if (status === "unauthenticated") {
       setIsLoginPopupOpen(true);
     }
   }, [status, session?.user?.id, fetchPdfFiles]);
 
   // 파일 처리 공통 함수로 분리
   const processFile = async (file: File) => {
-    if (file.type !== 'application/pdf') {
-      alert('PDF 파일만 업로드할 수 있습니다.');
+    if (file.type !== "application/pdf") {
+      alert("PDF 파일만 업로드할 수 있습니다.");
       return;
     }
 
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('pdf_file', file);
+    formData.append("pdf_file", file);
     formData.append(
-      'user_id',
-      session?.user?.id || (session?.user?.name || '').trim()
+      "user_id",
+      session?.user?.id || (session?.user?.name || "").trim()
     );
 
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
         const errData = await response.json();
-        alert(errData.error || '업로드에 실패했습니다.');
+        alert(errData.error || "업로드에 실패했습니다.");
         return;
       }
 
@@ -110,7 +110,7 @@ export default function Home() {
       setShowUploadSuccess(true);
       setTimeout(() => setShowUploadSuccess(false), 5000);
     } catch {
-      alert('서버에 연결할 수 없습니다.');
+      alert("서버에 연결할 수 없습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -158,16 +158,16 @@ export default function Home() {
   // 회원가입 핸들러
   const handleRegister = async () => {
     if (!name.trim() || !password.trim()) {
-      alert('아이디와 비밀번호를 모두 입력해주세요.');
+      alert("아이디와 비밀번호를 모두 입력해주세요.");
       return;
     }
 
     setIsRegistering(true);
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
+      const response = await fetch("/api/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           user_id: name.trim(),
@@ -179,29 +179,29 @@ export default function Home() {
 
       if (!response.ok) {
         const errorMessage =
-          (typeof data === 'object' && data !== null && 'detail' in data
+          (typeof data === "object" && data !== null && "detail" in data
             ? data.detail
             : null) ||
-          (typeof data === 'string' ? data : null) ||
-          '회원가입에 실패했습니다.';
+          (typeof data === "string" ? data : null) ||
+          "회원가입에 실패했습니다.";
 
         if (
-          errorMessage.includes('already registered') ||
-          errorMessage.includes('User ID already')
+          errorMessage.includes("already registered") ||
+          errorMessage.includes("User ID already")
         ) {
-          const loginResult = await signIn('credentials', {
+          const loginResult = await signIn("credentials", {
             user_id: name.trim(),
             password: password.trim(),
             redirect: false,
           });
 
           if (loginResult?.ok) {
-            setName('');
-            setPassword('');
+            setName("");
+            setPassword("");
             setIsLoginPopupOpen(false);
             return;
           } else {
-            alert('비밀번호를 확인해주세요');
+            alert("비밀번호를 확인해주세요");
             return;
           }
         }
@@ -217,22 +217,22 @@ export default function Home() {
       // alert(message);
 
       // 회원가입 성공 시 자동 로그인
-      const loginResult = await signIn('credentials', {
+      const loginResult = await signIn("credentials", {
         user_id: name.trim(),
         password: password.trim(),
         redirect: false,
       });
 
       if (loginResult?.ok) {
-        setName('');
-        setPassword('');
+        setName("");
+        setPassword("");
         setIsLoginPopupOpen(false);
       } else {
-        alert('로그인에 실패했습니다. 다시 로그인해주세요.');
+        alert("로그인에 실패했습니다. 다시 로그인해주세요.");
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('서버에 연결할 수 없습니다.');
+      console.error("Registration error:", error);
+      alert("서버에 연결할 수 없습니다.");
     } finally {
       setIsRegistering(false);
     }
@@ -268,9 +268,12 @@ export default function Home() {
                 Bookmarks
               </li>
               <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
+                Calendar
+              </li>
+              <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
                 Shop
               </li>
-            </ul>
+             </ul>
             <div className="fixed bottom-0 left-0 p-4">
               <h1 className="inline-block text-gray-400 text-sm p-2 pl-4 pb-4 font-ibm-plex-mono font-bold">
                 {firstOnly

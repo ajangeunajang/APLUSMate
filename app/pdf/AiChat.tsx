@@ -1,0 +1,111 @@
+'use client';
+import Image from "next/image";
+import { useState, useRef } from "react";
+
+export default function AiChat() {
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  };
+
+  const handleSend = () => {
+    if (message.trim()) {
+      setMessages([...messages, { text: message, sender: 'user' }]);
+      setMessage('');
+      adjustHeight();
+      // 여기에서 AI 응답을 처리할 수 있음 (예: API 호출)
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="fixed right-0 bottom-0">
+      <div className="fixed w-[30vw] min-w-[450px] h-full top-0 right-0 p-8">
+        <div className="w-full h-full bg-white rounded-[48px] p-8 flex flex-col">
+          <Image
+            className=""
+            src="/logo.svg"
+            alt="logo"
+            width={100}
+            height={30}
+            priority
+          />{" "}
+
+          <h2 className="font-ibm-plex-mono font-medium text-center mb-4">
+            Any Questions?
+          </h2>
+
+          {/* 채팅 버블 */}
+          <div className="flex-1 overflow-y-auto mb-4">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`mb-2 p-3 px-4 ml-auto rounded-[24px] w-5/6 ${
+                  msg.sender === "user"
+                    ? "bg-[#F2F2F2] text-left"
+                    : "bg-gray-100"
+                }`}
+              >
+                {msg.text}
+              </div>
+            ))}
+          </div>
+          {/* 입력창 */}
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => { setMessage(e.target.value); adjustHeight(); }}
+              onKeyPress={handleKeyPress}
+              placeholder="무엇이든 물어보세요"
+              rows={1}
+              className="max-h-[200px] w-full flex-1 py-2 pl-4 pr-12 border border-black rounded-[24px] focus:outline-none resize-none overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            />
+            <button
+              onClick={handleSend}
+              className="absolute right-0 top-0 p-3 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
+            >
+              <svg
+                width="23"
+                height="16"
+                viewBox="0 0 23 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M0 -1.00536e-06L6.62847 2.27094L6.62847 13.7291L-6.99382e-07 16L-5.53606e-07 12.665L3.65482 11.4581L3.65482 4.54187L-1.47284e-07 3.36946L0 -1.00536e-06ZM7.03247 5.64039L7.03247 2.41379L23 7.87685L23 8.16256L7.03247 13.5911L7.03247 10.3645L14.2059 8.02463L7.03247 5.65025L7.03247 5.64039Z"
+                  fill="#D9D9D9"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* <button
+        // onClick={() => setChatOpen(!chatOpen)}
+        className="fixed shadow-xl bottom-8 right-8 z-10 bg-white h-1/10 aspect-square p-3 rounded-full transition-color duration-300 hover:bg-gray-200"
+      >
+        <Image
+          className=""
+          src="/logo.svg"
+          alt="logo"
+          width={100}
+          height={30}
+          priority
+        />
+      </button> */}
+    </div>
+  );
+}

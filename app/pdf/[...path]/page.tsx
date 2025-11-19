@@ -1,4 +1,5 @@
 import PdfViewerClient from '../PdfViewerClient';
+import AiChat from '../AiChat';
 
 export default async function Page({ params }: { params: any }) {
 	const resolvedParams = await params;
@@ -14,8 +15,9 @@ export default async function Page({ params }: { params: any }) {
 	}
 
 	return (
-		<div>
-			<PdfViewerClient publicId={publicId} />
-		</div>
-	);
+    <div className="bg-[#F2F2F2]">
+      <PdfViewerClient publicId={publicId} />
+      <AiChat />
+    </div>
+  );
 }
