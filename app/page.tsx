@@ -41,9 +41,12 @@ export default function Home() {
         return;
       }
 
-      const response = await fetch(`/api/pdfs/my_pdfs?user_id=${encodeURIComponent(userId)}`, {
-        method: 'GET',
-      });
+      const response = await fetch(
+        `/api/pdfs/my_pdfs?user_id=${encodeURIComponent(userId)}`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -52,7 +55,12 @@ export default function Home() {
         return;
       } else {
         const errorText = await response.text();
-        console.error('❌ PDF 로드 실패 - Status:', response.status, 'Body:', errorText);
+        console.error(
+          '❌ PDF 로드 실패 - Status:',
+          response.status,
+          'Body:',
+          errorText
+        );
       }
     } catch (error) {
       console.error('PDF 파일 목록 조회 중 예외:', error);
@@ -80,7 +88,10 @@ export default function Home() {
     setIsUploading(true);
     const formData = new FormData();
     formData.append('pdf_file', file);
-    formData.append('user_id', session?.user?.id || (session?.user?.name || '').trim());
+    formData.append(
+      'user_id',
+      session?.user?.id || (session?.user?.name || '').trim()
+    );
 
     try {
       const response = await fetch('/api/upload', {
@@ -98,7 +109,7 @@ export default function Home() {
       await fetchPdfFiles();
       setShowUploadSuccess(true);
       setTimeout(() => setShowUploadSuccess(false), 5000);
-    } catch (error) {
+    } catch {
       alert('서버에 연결할 수 없습니다.');
     } finally {
       setIsUploading(false);
@@ -241,8 +252,8 @@ export default function Home() {
       <nav
         className={`fixed  z-10 h-full flex flex-col ${
           isLoginPopupOpen
-            ? 'w-full sm:w-1/3  top-0 left-0 justify-center '
-            : 'w-1/6 top-36 left-8'
+            ? "w-full sm:w-1/3  top-0 left-0 justify-center "
+            : "w-1/6 top-36 left-8"
         } `}
       >
         {isLoginPopupOpen && <LandingMessage />}
@@ -263,8 +274,8 @@ export default function Home() {
             <div className="fixed bottom-0 left-0 p-4">
               <h1 className="inline-block text-gray-400 text-sm p-2 pl-4 pb-4 font-ibm-plex-mono font-bold">
                 {firstOnly
-                  ? `${firstOnly}${firstOnly.endsWith('s') ? "'" : "'s"} Desk |`
-                  : 'Your Desk'}
+                  ? `${firstOnly}${firstOnly.endsWith("s") ? "'" : "'s"} Desk |`
+                  : "Your Desk"}
               </h1>
 
               <button
@@ -280,10 +291,14 @@ export default function Home() {
 
       <section
         className={`fixed overflow-y-scroll left-0 w-full h-screen sm:top-20 ${
-          isLoginPopupOpen ? 'sm:left-1/3 sm:w-2/3' : 'sm:left-1/5 sm:w-4/5'
+          isLoginPopupOpen ? "sm:left-1/3 sm:w-2/3" : "sm:left-1/5 sm:w-4/5"
         }   flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
       >
-        <div className={`rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center flex flex-col items-center ${isLoginPopupOpen ? 'justify-center' : 'justify-start' }`}>
+        <div
+          className={`rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center flex flex-col items-center ${
+            isLoginPopupOpen ? "justify-center" : "justify-start"
+          }`}
+        >
           {isLoginPopupOpen && (
             <div className="flex flex-col overflow-y-scroll items-center justify-start w-full lg:w-1/2 pb-20">
               <h1 className="max-w-s text-lg sm:text-2xl font-ibm-plex-mono font-medium leading-10 tracking-tight text-black dark:text-zinc-50 mb-12 sm:mb-16">
@@ -315,7 +330,7 @@ export default function Home() {
                     placeholder="Enter your password"
                     disabled={isRegistering}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isRegistering) {
+                      if (e.key === "Enter" && !isRegistering) {
                         handleRegister();
                       }
                     }}
@@ -328,7 +343,7 @@ export default function Home() {
                   disabled={isRegistering}
                   className="text-xs sm:text-sm w-full font-ibm-plex-mono bg-gray-600 hover:bg-gray-300 transition-colors duration-300 text-white px-4 py-2 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isRegistering ? 'Take it slow...' : 'Get Started'}
+                  {isRegistering ? "Take it slow..." : "Get Started"}
                 </button>
               </div>
               <p className="text-xs sm:text-sm mt-2 font-ibm-plex-mono font-medium text-zinc-500">
@@ -338,15 +353,17 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setIsLoginPopupOpen(false);
-                    signIn('google', { callbackUrl: '/' });
+                    signIn("google", { callbackUrl: "/" });
                   }}
                   className="w-full flex gap-4 justify-center font-ibm-plex-mono border-black border-1 transition-colors duration-300 text-black px-4 py-2 rounded-full font-medium text-xs sm:text-sm"
                 >
                   <div className="w-4 h-4 sm:w-5 sm:h-5">
-                    <img
-                      src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp=s96-fcrop64=1,00000000ffffffff-rw"
+                    <Image
+                      src="https://www.gstatic.com/marketing-cms/assets/images/d5/dc/cfe9ce8b4425b410b49b7f2dd3f3/g.webp"
                       alt="google logo"
-                    ></img>
+                      width={20}
+                      height={20}
+                    />
                   </div>
                   <div>Continue with Google</div>
                 </button>
@@ -377,12 +394,12 @@ export default function Home() {
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   className={`hover:opacity-20 transition-opacity duration-300 w-full aspect-3/2 flex flex-col items-center justify-center gap-2 ${
-                    isUploading ? 'cursor-wait opacity-50' : 'cursor-pointer'
-                  } ${isDragging ? 'opacity-10 border-blue-800' : ''}`}
+                    isUploading ? "cursor-wait opacity-50" : "cursor-pointer"
+                  } ${isDragging ? "opacity-10 border-blue-800" : ""}`}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Space') {
+                    if (e.key === "Enter" || e.key === "Space") {
                       e.preventDefault();
                       handleDivClick();
                     }
@@ -407,7 +424,7 @@ export default function Home() {
                     )}
                   </div>
                   <h3 className="font-ibm-plex-mono font-medium">
-                    {isUploading ? 'Uploading...' : 'New'}
+                    {isUploading ? "Uploading..." : "New"}
                   </h3>
                 </div>
 
@@ -415,31 +432,32 @@ export default function Home() {
                 {pdfFiles.map((pdf, index) => (
                   <a
                     key={index}
-                    href={`/pdf/${encodeURIComponent(pdf.file_path)}`}
-                    target="_blank"
+                    href={`/pdf/${encodeURIComponent(pdf.public_id)}`}
+                    target="_self"
                     rel="noopener noreferrer"
                     className="w-full aspect-3/2 flex flex-col items-center justify-start gap-2 transition-colors duration-300 cursor-pointer"
                   >
-                    <div
-                      className="w-full h-full bg-gray-100 rounded-[24px] p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
-                    <svg
-                      width="40"
-                      height="40"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="black"
-                      strokeWidth="2"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg></div>
+                    <div className="w-full h-full bg-gray-100 hover:bg-gray-200 transition-color duration-500 rounded-[24px] p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="black"
+                        strokeWidth="2"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
                     <div>
-                    <h3 className="font-ibm-plex-mono font-medium text-xs text-center leading-loose truncate w-full">
-                      {pdf.filename}
-                    </h3>
-                    <p className="font-ibm-plex-mono text-xs text-gray-500">
-                      {new Date(pdf.upload_time).toLocaleDateString()}
-                    </p></div>
+                      <h3 className="font-ibm-plex-mono font-medium text-xs text-center leading-loose truncate w-full">
+                        {pdf.filename}
+                      </h3>
+                      <p className="font-ibm-plex-mono text-xs text-gray-500">
+                        {new Date(pdf.upload_time).toLocaleDateString()}
+                      </p>
+                    </div>
                   </a>
                 ))}
               </div>
