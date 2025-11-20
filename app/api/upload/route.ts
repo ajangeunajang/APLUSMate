@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// body size 제한 설정
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '70mb', // 원하는 크기로 설정
+    },
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -20,6 +29,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 파일 크기 체크 (선택사항)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: '파일 크기가 50MB를 초과합니다.' },
+        { status: 413 }
+      );
+    }
+
     // 백엔드 서버 전달
     const backendUrl = process.env.BACKEND_URL;
     if (!backendUrl) {
@@ -33,10 +51,17 @@ export async function POST(request: NextRequest) {
     backendFormData.append('pdf_file', file);
     backendFormData.append('user_id', userId);
 
+    // 타임아웃 설정 추가
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분
+
     const response = await fetch(`${backendUrl}/pdfs/upload?user_id=${userId}`, {
       method: 'POST',
       body: backendFormData,
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
@@ -49,6 +74,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('파일 업로드 중 오류 발생:', error);
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: '업로드 시간이 초과되었습니다.' },
+        { status: 408 }
+      );
+    }
+    
     return NextResponse.json(
       { error: '서버에 연결할 수 없습니다.' },
       { status: 500 }
