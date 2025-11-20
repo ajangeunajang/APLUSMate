@@ -435,7 +435,7 @@ export default function Home() {
                 {pdfFiles.map((pdf, index) => (
                   <a
                     key={index}
-                    href={`/pdf/${encodeURIComponent(pdf.public_id)}`}
+                    href={`/pdf/${encodeURIComponent(pdf.public_id)}?filename=${encodeURIComponent(pdf.filename)}`}
                     target="_self"
                     rel="noopener noreferrer"
                     className="w-full aspect-3/2 flex flex-col items-center justify-start gap-2 transition-colors duration-300 cursor-pointer"

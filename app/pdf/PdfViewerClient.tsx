@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -32,6 +32,21 @@ export default function PdfViewerClient({ publicId }: Props) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [notes, setNotes] = useState<{ [key: number]: string }>({});
+  const [pdfTitle, setPdfTitle] = useState<string>("제목 없음");
+  const [pdfDate, setPdfDate] = useState<string>("");
+
+  // URL에서 filename 추출
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const filenameFromUrl = params.get('filename');
+      if (filenameFromUrl) {
+        const decoded = decodeURIComponent(filenameFromUrl);
+        const title = decoded.replace(/\.pdf$/i, ""); // .pdf 제거
+        setPdfTitle(title);
+      }
+    }
+  }, []);
 
   const pdfUrl = useMemo(
     () => `/api/pdfs/${encodeURIComponent(publicId)}?inline=1`,
@@ -48,6 +63,46 @@ export default function PdfViewerClient({ publicId }: Props) {
       ...prev,
       [pageNumber]: value,
     }));
+  };
+
+  const handleLoadSuccess = async (pdf: any) => {
+    console.log("PDF loaded successfully, pages:", pdf.numPages);
+    setNumPages(pdf.numPages);
+    
+    // URL에서 filename이 없을 때만 메타데이터에서 제목 가져오기
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const filenameFromUrl = params.get('filename');
+      
+      if (!filenameFromUrl) {
+        try {
+          const metadata = await pdf.getMetadata();
+          console.log("PDF metadata:", metadata);
+          
+          if (metadata.info?.Title) {
+            const titleFromMeta = String(metadata.info.Title).replace(/\.pdf$/i, ""); // .pdf 제거
+            setPdfTitle(titleFromMeta);
+          }
+        } catch (error) {
+          console.error("Failed to load PDF metadata:", error);
+        }
+      }
+    }
+    
+    // 날짜는 계속 메타데이터에서 가져오기
+    try {
+      const metadata = await pdf.getMetadata();
+      const dateString = metadata.info?.CreationDate || metadata.info?.ModDate;
+      if (dateString) {
+        const dateMatch = dateString.match(/D:(\d{4})(\d{2})(\d{2})/);
+        if (dateMatch) {
+          const [, year, month, day] = dateMatch;
+          setPdfDate(`${year}.${month}.${day}`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load PDF metadata:", error);
+    }
   };
 
   console.log('PDF URL:', pdfUrl);
@@ -67,10 +122,7 @@ export default function PdfViewerClient({ publicId }: Props) {
         <div className="w-48 border-r border-[#CDCDCD] overflow-y-auto m-8 mr-4 pr-8">
           <Document
             file={pdfUrl}
-            onLoadSuccess={({ numPages }) => {
-              console.log("PDF loaded successfully, pages:", numPages);
-              setNumPages(numPages);
-            }}
+            onLoadSuccess={handleLoadSuccess}
             onLoadError={(error) => {
               console.error("PDF load error:", error);
               console.error("Error details:", {
@@ -123,8 +175,8 @@ export default function PdfViewerClient({ publicId }: Props) {
         {/* 메인 PDF 뷰어 */}
         <div className="flex-1 overflow-auto items-center justify-center p-4 py-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
           {/* 현재 페이지 */}
-          <h1 className="p-8">Title W7-1 Radiosity</h1>
-          <div className="text-sm text-[#CDCDCD]">2025.55.55</div>
+          <h1 className="p-8">{pdfTitle}</h1>
+          <div className="text-sm text-[#CDCDCD]">{pdfDate || "No Date"}</div>
           <div className="text-sm flex items-center justify-end gap-4 py-4">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
