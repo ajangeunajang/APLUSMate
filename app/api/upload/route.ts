@@ -82,8 +82,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // 에러 정보를 더 자세히 출력
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+    console.error('상세 오류:', errorMessage);
+    
     return NextResponse.json(
-      { error: '서버에 연결할 수 없습니다.' },
+      { 
+        error: '서버에 연결할 수 없습니다.',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }
