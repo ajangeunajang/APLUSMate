@@ -148,8 +148,8 @@ export default function PdfViewerClient({ publicId }: Props) {
                   onClick={() => setCurrentPage(index + 1)}
                   className={`mb-2 cursor-pointer rounded overflow-hidden transition relative ${
                     currentPage === index + 1
-                      ? "border-blue-500"
-                      : "border-gray-300 hover:border-gray-400"
+                      ? "shadow-lg" // 선택된 페이지만 shadow 적용
+                      : ""
                   }`}
                 >
                   <Page
