@@ -1,12 +1,12 @@
 "use client";
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChatContext } from "./ChatContext";
 
 export default function AiChat() {
-  const { chatOpen, setChatOpen } = useChatContext();
+  const { chatOpen, setChatOpen, captureMode, setCaptureMode, capturedImage, setCapturedImage } = useChatContext();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
+  const [messages, setMessages] = useState<{ text: string; sender: string; image?: string }[]>(
     []
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -19,15 +19,48 @@ export default function AiChat() {
     }
   };
 
-  const handleSend = () => {
-    if (message.trim()) {
-      setMessages((prev) => [...prev, { text: message, sender: "user" }]);
-      setMessage("");
-      // reset inline height so min-height (3rem) from tailwind takes effect
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "3rem";
+  // 캡쳐된 이미지가 있을 때 메시지에 자동 추가
+  useEffect(() => {
+    if (capturedImage) {
+      // 이미지가 캡쳐되면 채팅창 열기
+      if (!chatOpen) {
+        setChatOpen(true);
       }
-      // 여기서 AI 응답 처리  API 호
+    }
+  }, [capturedImage, chatOpen, setChatOpen]);
+
+  const handleSend = async () => {
+    if (!message.trim() && !capturedImage) return;
+    
+    const newMessage = {
+      text: message,
+      sender: "user",
+      image: capturedImage || undefined
+    };
+    
+    setMessages((prev) => [...prev, newMessage]);
+    setMessage("");
+    setCapturedImage(null);
+    
+    // reset inline height so min-height (3rem) from tailwind takes effect
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "3rem";
+    }
+    
+    // TODO: 여기서 AI 응답 처리 API (텍스트 + 이미지를 서버로 전송)
+    try {
+      // const response = await fetch('/api/chat', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     message: newMessage.text,
+      //     image: newMessage.image
+      //   })
+      // });
+      // const data = await response.json();
+      // setMessages(prev => [...prev, { text: data.response, sender: 'ai' }]);
+    } catch (error) {
+      console.error('메시지 전송 실패:', error);
     }
   };
 
@@ -57,6 +90,7 @@ export default function AiChat() {
         />
       </button>
 
+      {/* 채팅창 */}
       <div
         className={`fixed p-8 overflow-hidden transition-all duration-300 ${
           chatOpen
@@ -65,7 +99,7 @@ export default function AiChat() {
         }`}
       >
         <div className="w-full h-full bg-white overflow-hidden rounded-[48px] p-8 flex flex-col items-center">
-          {/* 채팅창 header */}
+          {/* header */}
           <div className="flex justify-between w-full">
             <Image
               className=""
@@ -96,7 +130,7 @@ export default function AiChat() {
           {/* 입력창 */}
           <div
             className={`w-full relative transition-all duration-300 flex flex-col items-center gap-2 ${
-              messages.length === 0 ? "top-1/3" : "top-0 h-full justify-between"
+              messages.length === 0 ? "top-[40%] -translate-y-1/2" : "top-0 h-full justify-between"
             }`}
           >
             <h2
@@ -122,15 +156,39 @@ export default function AiChat() {
                       : "bg-gray-100"
                   }`}
                 >
+                  {msg.image && (
+                    <img 
+                      src={msg.image} 
+                      alt="캡쳐된 이미지" 
+                      className="max-w-full rounded-lg mb-2"
+                    />
+                  )}
                   {msg.text}
                 </div>
               ))}
             </div>
 
+            {/* 입력창 */}
             <div
-              className={`relative transition-all duration-300 min-w-[320px]`}
+              className={`w-full max-w-[500px] relative transition-all duration-300 min-w-[320px] flex flex-col items-center `}
             >
-              <div className="relative text-center">
+              {/* 캡쳐된 이미지 미리보기 */}
+              {capturedImage && (
+                <div className="relative mb-2 inline-block">
+                  <img 
+                    src={capturedImage} 
+                    alt="캡쳐 미리보기" 
+                    className="max-w-[200px] rounded-lg border border-gray-300"
+                  />
+                  <button
+                    onClick={() => setCapturedImage(null)}
+                    className="absolute -top-2 -right-2 bg-gray-500 transition-colors duration-200 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-gray-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <div className="relative text-center w-full">
                 <textarea
                   ref={textareaRef}
                   value={message}
@@ -161,7 +219,16 @@ export default function AiChat() {
                   </svg>
                 </button>
               </div>
-              <div className="text-center text-sm font-medium flex items-center justify-center mt-4 gap-4">
+              {/* pdf 캡쳐버튼 */}
+              <button
+                onClick={() => {
+                  setCaptureMode(!captureMode);
+                  if (chatOpen) setChatOpen(false);
+                }}
+                className={`cursor-pointer text-center text-sm font-medium flex items-center justify-center mt-4 gap-4 transition-colors duration-200 ${
+                  captureMode ? 'text-blue-600' : 'text-black hover:text-gray-600'
+                }`}
+              >
                 <svg
                   width="40"
                   height="21"
@@ -171,11 +238,11 @@ export default function AiChat() {
                 >
                   <path
                     d="M0 18V16.125H1V18C1 19.1046 1.89543 20 3 20V21L2.8457 20.9961C1.26055 20.9158 0 19.6051 0 18ZM5.83301 20V21H3V20H5.83301ZM17.167 20V21H11.5V20H17.167ZM28.5 20V21H22.833V20H28.5ZM37 20V21H34.167V20H37ZM40 18C40 19.6569 38.6569 21 37 21V20C38.1046 20 39 19.1046 39 18V16.125H40V18ZM1 8.625V12.375H0V8.625H1ZM40 8.625V12.375H39V8.625H40ZM0 3C0 1.34315 1.34315 0 3 0H5.83301V1H3C1.89543 1 1 1.89543 1 3V4.875H0V3ZM40 4.875H39V3C39 1.89543 38.1046 1 37 1H34.167V0H37C38.6569 0 40 1.34315 40 3V4.875ZM17.167 0V1H11.5V0H17.167ZM28.5 0V1H22.833V0H28.5Z"
-                    fill="black"
+                    fill="currentColor"
                   />
                 </svg>
-                부분 선택 후 질문하기
-              </div>
+                {captureMode ? '캡쳐 모드' : '부분 선택 후 질문하기'}
+              </button>
             </div>
           </div>
         </div>

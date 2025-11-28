@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -31,7 +31,7 @@ type Props = {
 
 export default function PdfViewerClient({ publicId }: Props) {
   const router = useRouter();
-  const { chatOpen } = useChatContext();
+  const { chatOpen, captureMode, setCaptureMode, setCapturedImage } = useChatContext();
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [notes, setNotes] = useState<{ [key: number]: string }>({});
@@ -46,6 +46,12 @@ export default function PdfViewerClient({ publicId }: Props) {
   const pageContainerRef = useRef<HTMLDivElement | null>(null);
   const [pageWidth, setPageWidth] = useState<number | undefined>(undefined);
   const [pageAspectRatio, setPageAspectRatio] = useState<number>(1);
+  
+  // 캡쳐 관련 상태
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  const pdfPageRef = useRef<HTMLDivElement | null>(null);
 
   // 사이드바 자동 스크롤 (현재 페이지 썸네일이 뷰포트에 보이도록)
   useEffect(() => {
@@ -255,6 +261,92 @@ export default function PdfViewerClient({ publicId }: Props) {
     }));
   };
 
+  // 캡쳐 기능 핸들러
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!captureMode || !pdfPageRef.current) return;
+    
+    const rect = pdfPageRef.current.getBoundingClientRect();
+    setSelectionStart({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+    setSelectionEnd(null);
+    setIsSelecting(true);
+  }, [captureMode]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSelecting || !pdfPageRef.current) return;
+    
+    const rect = pdfPageRef.current.getBoundingClientRect();
+    setSelectionEnd({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  }, [isSelecting]);
+
+  const handleMouseUp = useCallback(async () => {
+    if (!isSelecting || !selectionStart || !selectionEnd || !pdfPageRef.current) return;
+    
+    setIsSelecting(false);
+    
+    // 선택 영역 계산
+    const x = Math.min(selectionStart.x, selectionEnd.x);
+    const y = Math.min(selectionStart.y, selectionEnd.y);
+    const width = Math.abs(selectionEnd.x - selectionStart.x);
+    const height = Math.abs(selectionEnd.y - selectionStart.y);
+    
+    // 최소 크기 체크
+    if (width < 10 || height < 10) {
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      return;
+    }
+    
+    try {
+      // PDF 캔버스를 직접 찾기
+      const pdfCanvas = pdfPageRef.current.querySelector('canvas');
+      
+      if (!pdfCanvas) {
+        throw new Error('PDF 캔버스를 찾을 수 없습니다.');
+      }
+      
+      // 선택 영역만 잘라내기
+      const croppedCanvas = document.createElement('canvas');
+      const ctx = croppedCanvas.getContext('2d');
+      
+      if (ctx) {
+        // PDF 캔버스의 실제 크기 대비 표시 크기 비율 계산
+        const scaleX = pdfCanvas.width / pdfCanvas.offsetWidth;
+        const scaleY = pdfCanvas.height / pdfCanvas.offsetHeight;
+        
+        // 크롭 영역 크기 설정
+        croppedCanvas.width = width * scaleX;
+        croppedCanvas.height = height * scaleY;
+        
+        // PDF 캔버스에서 선택 영역만 복사
+        ctx.drawImage(
+          pdfCanvas,
+          x * scaleX, y * scaleY, width * scaleX, height * scaleY,
+          0, 0, width * scaleX, height * scaleY
+        );
+        
+        // base64로 변환하여 저장
+        const imageData = croppedCanvas.toDataURL('image/png', 0.95);
+        setCapturedImage(imageData);
+        setCaptureMode(false);
+        setSelectionStart(null);
+        setSelectionEnd(null);
+        
+        console.log('캡쳐 성공! 이미지 크기:', croppedCanvas.width, 'x', croppedCanvas.height);
+      }
+    } catch (error) {
+      console.error('캡쳐 실패:', error);
+      alert(`이미지 캡쳐에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
+  }, [isSelecting, selectionStart, selectionEnd, setCapturedImage, setCaptureMode]);
+
   const handleLoadSuccess = async (pdf: any) => {
     console.log("PDF loaded successfully, pages:", pdf.numPages);
     setNumPages(pdf.numPages);
@@ -399,7 +491,7 @@ export default function PdfViewerClient({ publicId }: Props) {
 
         {/* [우] 메인 PDF 뷰어 - 현재페이지 */}
         <div className="flex-1 relative my-8 border-l border-[#CDCDCD] flex flex-col items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
-          {/* 1) 뒤로가기 버튼 */}
+          {/* (1) 뒤로가기 버튼 */}
           <button
             onClick={() => router.back()}
             className="absolute left-0 top-0 px-8 py-4 opacity-40 hover:opacity-100 transition-colors duration-200"
@@ -417,7 +509,7 @@ export default function PdfViewerClient({ publicId }: Props) {
               />
             </svg>
           </button>
-          {/* 2) 제목 + 날짜 */}
+          {/* (2) 제목 + 날짜 */}
           <div>
             <h1 className="">{pdfTitle}</h1>
             <div className="text-sm text-[#CDCDCD] pt-4">
@@ -425,7 +517,7 @@ export default function PdfViewerClient({ publicId }: Props) {
             </div>
           </div>
 
-          {/* 3) 현재 페이지 */}
+          {/* (3) 현재 페이지 */}
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex-1 w-full flex flex-col justify-center items-end gap-4">
               <div>
@@ -434,15 +526,45 @@ export default function PdfViewerClient({ publicId }: Props) {
                 </span>
                 <span className="pl-4">page</span>
               </div>
-              <Page
-                pageNumber={currentPage}
-                className="rounded-2xl overflow-hidden rounded-xl"
-                width={pageWidth}
-                renderMode="canvas"
-                loading={
-                  <div className="w-full h-[70vh] bg-gray-200/80 rounded-2xl animate-pulse" />
-                }
-              />
+              <div 
+                ref={pdfPageRef}
+                className={`relative ${captureMode ? 'cursor-crosshair' : ''}`}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+              >
+                <Page
+                  pageNumber={currentPage}
+                  className="rounded-2xl overflow-hidden rounded-xl"
+                  width={pageWidth}
+                  renderMode="canvas"
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  loading={
+                    <div className="w-full h-[70vh] bg-gray-200/80 rounded-2xl animate-pulse" />
+                  }
+                />
+                {/* 캡쳐 모드 안내 */}
+                {captureMode && (
+                  <div className="absolute top-0 left-0 w-full h-full rounded-2xl bg-black/20 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg text-sm">
+                      캡쳐할 영역을 드래그하세요
+                    </div>
+                  </div>
+                )}
+                {/* 선택 영역 표시 */}
+                {isSelecting && selectionStart && selectionEnd && (
+                  <div
+                    className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none"
+                    style={{
+                      left: Math.min(selectionStart.x, selectionEnd.x),
+                      top: Math.min(selectionStart.y, selectionEnd.y),
+                      width: Math.abs(selectionEnd.x - selectionStart.x),
+                      height: Math.abs(selectionEnd.y - selectionStart.y),
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
 

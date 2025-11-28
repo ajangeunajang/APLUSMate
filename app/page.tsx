@@ -31,6 +31,7 @@ export default function Home() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   // 사용자 PDF 파일 목록 조회
   const fetchPdfFiles = useCallback(async () => {
@@ -378,7 +379,7 @@ export default function Home() {
               </div>
             </div>
           )}
-          {/* 로그인 시 유저 pdf 목록 불러오기 */}
+          {/* 로그인 성공 - 유저 pdf 목록 불러오기 */}
           {!isLoginPopupOpen && (
             <>
               <input
@@ -432,37 +433,92 @@ export default function Home() {
                 </div>
 
                 {/* PDF 파일 목록 */}
-                {pdfFiles.map((pdf, index) => (
-                  <a
-                    key={index}
-                    href={`/pdf/${encodeURIComponent(pdf.public_id)}?filename=${encodeURIComponent(pdf.filename)}`}
-                    target="_self"
-                    rel="noopener noreferrer"
-                    className="w-full aspect-3/2 flex flex-col items-center justify-start gap-2 transition-colors duration-300 cursor-pointer"
-                  >
-                    <div className="w-full h-full bg-gray-100 hover:bg-gray-200 transition-color duration-500 rounded-[24px] p-4 flex flex-col items-center justify-center gap-2 hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
-                      <svg
-                        width="40"
-                        height="40"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="black"
-                        strokeWidth="2"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-ibm-plex-mono font-medium text-xs text-center leading-loose truncate w-full">
-                        {pdf.filename}
-                      </h3>
-                      <p className="font-ibm-plex-mono text-xs text-gray-500">
-                        {new Date(pdf.upload_time).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </a>
-                ))}
+                {pdfFiles.map((pdf) => {
+                  // Use thumbnail proxy endpoint for PDF thumbnails
+                  const imageSrc = pdf.profile_image_path
+                    ? `/api/thumbnails/${encodeURIComponent(pdf.public_id)}`
+                    : null;
+
+                  const hasImageError = imageErrors.has(pdf.public_id);
+                    
+                  return (
+                    <a
+                      key={pdf.public_id}
+                      href={`/pdf/${encodeURIComponent(pdf.public_id)}?filename=${encodeURIComponent(pdf.filename)}`}
+                      target="_self"
+                      rel="noopener noreferrer"
+                      className="w-full aspect-3/2 flex flex-col items-center justify-start gap-2 transition-colors duration-300 cursor-pointer"
+                    >
+                      <div className="w-full h-full bg-gray-100 hover:bg-gray-200 transition-color duration-500 rounded-[24px] flex flex-col items-center justify-center gap-2 transition-colors duration-300 cursor-pointer">
+                        {imageSrc && !hasImageError ? (
+                          <div className="w-full h-full rounded-[16px] overflow-hidden">
+                            <img
+                              src={imageSrc}
+                              alt={pdf.filename}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error("[img] failed to load:", imageSrc);
+                                setImageErrors(prev => new Set(prev).add(pdf.public_id));
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <svg 
+                            width="48" 
+                            height="48" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            className="text-gray-400"
+                          >
+                            <path 
+                              d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                            <path 
+                              d="M14 2V8H20" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                            <path 
+                              d="M16 13H8" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                            <path 
+                              d="M16 17H8" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                            <path 
+                              d="M10 9H9H8" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-ibm-plex-mono font-medium text-xs text-center leading-loose truncate w-full">
+                          {pdf.filename}
+                        </h3>
+                        <p className="font-ibm-plex-mono text-xs text-gray-500">
+                          {new Date(pdf.upload_time).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             </>
           )}
