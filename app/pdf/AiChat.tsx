@@ -1,9 +1,10 @@
 "use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
+import { useChatContext } from "./ChatContext";
 
 export default function AiChat() {
-  const [chatOpen, setChatOpen] = useState(true);
+  const { chatOpen, setChatOpen } = useChatContext();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
     []
@@ -23,7 +24,7 @@ export default function AiChat() {
       setMessages([...messages, { text: message, sender: "user" }]);
       setMessage("");
       adjustHeight();
-      // 여기서 AI 응답 처리  API 호출)
+      // 여기서 AI 응답 처리  API 호출
     }
   };
 

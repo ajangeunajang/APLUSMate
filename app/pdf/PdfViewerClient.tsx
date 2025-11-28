@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
+import { useChatContext } from "./ChatContext";
 
 // react-pdf를 동적으로 로드하여 SSR 문제 해결
 const Document = dynamic(
@@ -11,13 +13,12 @@ const Document = dynamic(
   { ssr: false }
 );
 
-const Page = dynamic(
-  () => import("react-pdf").then((mod) => mod.Page),
-  { ssr: false }
-);
+const Page = dynamic(() => import("react-pdf").then((mod) => mod.Page), {
+  ssr: false,
+});
 
 // PDF worker 설정
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   import("react-pdf").then((pdfjs) => {
     pdfjs.pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.pdfjs.version}/build/pdf.worker.min.mjs`;
   });
@@ -28,18 +29,157 @@ type Props = {
 };
 
 export default function PdfViewerClient({ publicId }: Props) {
-  const [scale, setScale] = useState(1.0);
+  const router = useRouter();
+  const { chatOpen } = useChatContext();
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [notes, setNotes] = useState<{ [key: number]: string }>({});
   const [pdfTitle, setPdfTitle] = useState<string>("제목 없음");
   const [pdfDate, setPdfDate] = useState<string>("");
 
+  // 사이드바 ref
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  // 루트(전체) 컨테이너 ref — transition/width 변경 감지를 위해 사용
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const thumbnailRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const pageContainerRef = useRef<HTMLDivElement | null>(null);
+  const [pageWidth, setPageWidth] = useState<number | undefined>(undefined);
+
+  // (현재 페이지 썸네일이 뷰포트에 보이도록) 사이드바 자동 스크롤
+  useEffect(() => {
+    if (sidebarRef.current && thumbnailRefs.current[currentPage]) {
+      const thumbnail = thumbnailRefs.current[currentPage];
+      const sidebar = sidebarRef.current;
+
+      if (thumbnail) {
+        const thumbnailTop = thumbnail.offsetTop;
+        const thumbnailHeight = thumbnail.offsetHeight;
+        const sidebarScrollTop = sidebar.scrollTop;
+        const sidebarHeight = sidebar.clientHeight;
+
+        // 썸네일이 뷰포트 위쪽을 벗어난 경우
+        if (thumbnailTop < sidebarScrollTop) {
+          sidebar.scrollTo({
+            top: thumbnailTop - 20, // 약간의 여백
+            behavior: "smooth",
+          });
+        }
+        // 썸네일이 뷰포트 아래쪽을 벗어난 경우
+        else if (
+          thumbnailTop + thumbnailHeight >
+          sidebarScrollTop + sidebarHeight
+        ) {
+          sidebar.scrollTo({
+            top: thumbnailTop + thumbnailHeight - sidebarHeight + 20, // 약간의 여백
+            behavior: "smooth",
+          });
+        }
+      }
+    }
+  }, [currentPage]);
+
+  // 페이지 이동 키보드 이벤트 처리
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        e.preventDefault();
+        setCurrentPage((prev) => Math.min(numPages || prev, prev + 1));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [numPages]);
+
+  // 페이지 이동 스크롤 이벤트 (debounce)
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleWheel = (e: WheelEvent) => {
+      // 사이드바(썸네일) 내부에서 발생 휠 이벤트 무시
+      if (sidebarRef.current && sidebarRef.current.contains(e.target as Node))
+        return;
+
+      // textarea에 포커스 있을 때 스크롤 이벤트 무시
+      if (document.activeElement?.tagName === "TEXTAREA") return;
+
+      clearTimeout(scrollTimeout);
+
+      scrollTimeout = setTimeout(() => {
+        if (e.deltaY > 0) {
+          setCurrentPage((prev) => Math.min(numPages || prev, prev + 1));
+        } else if (e.deltaY < 0) {
+          setCurrentPage((prev) => Math.max(1, prev - 1));
+        }
+      }, 50); // 50ms debounce
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      clearTimeout(scrollTimeout);
+    };
+  }, [numPages]);
+
+  // PDF 뷰어 페이지 사이즈 (컨테이너 크기에 맞춰) 조정
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const computeAndSet = () => {
+      const el = pageContainerRef.current;
+      if (!el) return;
+      setPageWidth(el.clientWidth);
+      console.log("Computing page width based on container:", el.clientWidth);
+    };
+
+    const scheduleCompute = () => {
+      if (rafId !== null) return; // prevent multiple calls
+      rafId = requestAnimationFrame(() => {
+        computeAndSet();
+        requestAnimationFrame(() => {
+          computeAndSet();
+          rafId = null;
+        });
+      });
+    };
+
+    const ro = new ResizeObserver(scheduleCompute);
+    if (pageContainerRef.current) ro.observe(pageContainerRef.current);
+    if (rootRef.current && rootRef.current !== pageContainerRef.current)
+      ro.observe(rootRef.current);
+
+    window.addEventListener("resize", scheduleCompute);
+
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (
+        !e.propertyName ||
+        e.propertyName.includes("width") ||
+        e.propertyName === "all"
+      ) {
+        scheduleCompute();
+      }
+    };
+    rootRef.current?.addEventListener("transitionend", onTransitionEnd);
+
+    // initial
+    scheduleCompute();
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", scheduleCompute);
+      rootRef.current?.removeEventListener("transitionend", onTransitionEnd);
+      ro.disconnect();
+    };
+  }, [chatOpen]);
+
   // URL에서 filename 추출
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const filenameFromUrl = params.get('filename');
+      const filenameFromUrl = params.get("filename");
       if (filenameFromUrl) {
         const decoded = decodeURIComponent(filenameFromUrl);
         const title = decoded.replace(/\.pdf$/i, ""); // .pdf 제거
@@ -53,10 +193,13 @@ export default function PdfViewerClient({ publicId }: Props) {
     [publicId]
   );
 
-  const documentOptions = useMemo(() => ({
-    cMapUrl: 'https://unpkg.com/pdfjs-dist@4.0.379/cmaps/',
-    cMapPacked: true,
-  }), []);
+  const documentOptions = useMemo(
+    () => ({
+      cMapUrl: "https://unpkg.com/pdfjs-dist@4.0.379/cmaps/",
+      cMapPacked: true,
+    }),
+    []
+  );
 
   const handleNoteChange = (pageNumber: number, value: string) => {
     setNotes((prev) => ({
@@ -68,19 +211,22 @@ export default function PdfViewerClient({ publicId }: Props) {
   const handleLoadSuccess = async (pdf: any) => {
     console.log("PDF loaded successfully, pages:", pdf.numPages);
     setNumPages(pdf.numPages);
-    
-    // URL에서 filename이 없을 때만 메타데이터에서 제목 가져오기
-    if (typeof window !== 'undefined') {
+
+    // URL에 filename이 없을 때만 메타데이터에서 제목 가져오기
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const filenameFromUrl = params.get('filename');
-      
+      const filenameFromUrl = params.get("filename");
+
       if (!filenameFromUrl) {
         try {
           const metadata = await pdf.getMetadata();
           console.log("PDF metadata:", metadata);
-          
+
           if (metadata.info?.Title) {
-            const titleFromMeta = String(metadata.info.Title).replace(/\.pdf$/i, ""); // .pdf 제거
+            const titleFromMeta = String(metadata.info.Title).replace(
+              /\.pdf$/i,
+              ""
+            ); // .pdf 제거
             setPdfTitle(titleFromMeta);
           }
         } catch (error) {
@@ -88,8 +234,8 @@ export default function PdfViewerClient({ publicId }: Props) {
         }
       }
     }
-    
-    // 날짜는 계속 메타데이터에서 가져오기
+
+    // 날짜는 계속 메타데이터에서 가져옴
     try {
       const metadata = await pdf.getMetadata();
       const dateString = metadata.info?.CreationDate || metadata.info?.ModDate;
@@ -105,8 +251,6 @@ export default function PdfViewerClient({ publicId }: Props) {
     }
   };
 
-  console.log('PDF URL:', pdfUrl);
-
   if (!publicId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,48 +260,65 @@ export default function PdfViewerClient({ publicId }: Props) {
   }
 
   return (
-    <div className="w-[70vw] h-screen flex flex-col">
-      <div className="flex flex-1 overflow-hidden">
-        {/* 썸네일 사이드바 */}
-        <div className="w-48 border-r border-[#CDCDCD] overflow-y-auto m-8 mr-4 pr-8">
-          <Document
-            file={pdfUrl}
-            onLoadSuccess={handleLoadSuccess}
-            onLoadError={(error) => {
-              console.error("PDF load error:", error);
-              console.error("Error details:", {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              });
-            }}
-            loading={
-              <div className="text-gray-500 text-sm p-2">Loading...</div>
-            }
-            error={
-              <div className="text-red-500 p-2 text-sm">
-                <p>Failed to load PDF</p>
-              </div>
-            }
-            options={documentOptions}
+    <div
+      ref={rootRef}
+      className={`${
+        chatOpen ? "w-[70vw]" : "w-full"
+      } transition-all duration-300 h-screen flex flex-col`}
+    >
+      {/* 🔥 하나의 Document만 */}
+      <Document
+        file={pdfUrl}
+        onLoadSuccess={handleLoadSuccess}
+        onLoadError={(error) => {
+          console.error("PDF load error:", error);
+          console.error("Error details:", {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          });
+        }}
+        loading={<div className="text-gray-500 text-sm p-2">Loading...</div>}
+        error={
+          <div className="text-red-500 p-2 text-sm">
+            <p>Failed to load PDF</p>
+          </div>
+        }
+        options={documentOptions}
+      >
+        <div className="h-screen flex flex-1 overflow-hidden">
+          {/* 썸네일 사이드바 */}
+          <div
+            ref={sidebarRef}
+            className="h-full w-48 overflow-y-auto p-8  [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {numPages &&
               Array.from(new Array(numPages), (el, index) => (
                 <div
                   key={index}
+                  ref={(el) => {
+                    thumbnailRefs.current[index + 1] = el;
+                  }}
                   onClick={() => setCurrentPage(index + 1)}
-                  className={`mb-2 cursor-pointer rounded overflow-hidden transition relative ${
+                  className={`mb-2 cursor-pointer rounded transition duration-100 relative ${
                     currentPage === index + 1
-                      ? "shadow-lg" // 선택된 페이지만 shadow 적용
-                      : ""
+                      ? "opacity-100" // 선택된 페이지만 적용
+                      : "opacity-40 hover:opacity-90 text-gray-100"
                   }`}
                 >
+                  {/* 같은 Document 내의 Page 컴포넌트!!  */}
                   <Page
                     pageNumber={index + 1}
-                    scale={0.2}
+                    scale={0.15}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
+                    className={`rounded-sm overflow-hidden ${
+                      currentPage === index + 1
+                        ? "shadow-lg" // 선택된 페이지만 적용
+                        : ""
+                    }`}
                   />
+                  {/* 페이지 넘버 */}
                   <div className="text-center text-xs py-1 font-ibm-plex-mono text-[#545454] font-medium">
                     {index + 1}
                   </div>
@@ -169,63 +330,59 @@ export default function PdfViewerClient({ publicId }: Props) {
                   )}
                 </div>
               ))}
-          </Document>
-        </div>
+          </div>
 
-        {/* 메인 PDF 뷰어 */}
-        <div className="flex-1 overflow-auto items-center justify-center p-4 py-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
-          {/* 현재 페이지 */}
-          <h1 className="p-8">{pdfTitle}</h1>
-          <div className="text-sm text-[#CDCDCD]">{pdfDate || "No Date"}</div>
-          <div className="text-sm flex items-center justify-end gap-4 py-4">
+          {/* 메인 PDF 뷰어 - 현재페이지 */}
+          <div className="relative my-8 border-l border-[#CDCDCD] flex-1 flex flex-col overflow-auto items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
+            {/* 뒤로가기 버튼 */}
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => router.back()}
+              className="absolute left-0 top-0 px-8 py-4 opacity-40 hover:opacity-100 transition-colors"
             >
-              prev
+              <svg
+                width="19"
+                height="37"
+                viewBox="0 0 19 37"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18.3848 0.353581L0.707108 18.0312L18.3848 35.7089"
+                  stroke="#545454"
+                />
+              </svg>
             </button>
-            <div className="">
-              <span>
-                {currentPage} / {numPages || "  "}
-              </span>
-              <span className="pl-4">page</span>
+            <div>
+              <h1 className="">{pdfTitle}</h1>
+              <div className="text-sm text-[#CDCDCD] pt-4">
+                {pdfDate || "Date"}
+              </div>
             </div>
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(numPages || prev, prev + 1))
-              }
-              disabled={currentPage === numPages}
-              className="px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              next
-            </button>
-          </div>
-          <div className="text-center">
-            <Document
-              file={pdfUrl}
-              onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              loading={<div className="min-h-[50vh] text-gray-500 p-8">Loading PDF...</div>}
-              error={
-                <div className="text-red-500 p-4">
-                  <p>Failed to load PDF file.</p>
-                  <p className="text-sm mt-2">URL: {pdfUrl}</p>
-                  <p className="text-sm">Check console for details.</p>
-                </div>
-              }
-              options={documentOptions}
-            >
-              <Page pageNumber={currentPage} scale={scale} />
-            </Document>
-          </div>
 
-          {/* 노트 섹션 */}
-          <div className="mt-16 w-full h-32 mx-auto">
-            <div className="">
+            {/* 현재 페이지 섹션 */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex-1 w-full flex flex-col justify-center items-end gap-4">
+                <div>
+                  <span>
+                    {currentPage} / {numPages || "  "}
+                  </span>
+                  <span className="pl-4">page</span>
+                </div>
+                <Page
+                  pageNumber={currentPage}
+                  className="rounded-2xl overflow-hidden rounded-xl"
+                  width={pageWidth}
+                  renderMode="canvas"
+                />
+              </div>
+            </div>
+
+            {/* 노트 섹션 */}
+            <div ref={pageContainerRef} className="w-full min-h-32 mx-auto">
               <textarea
                 value={notes[currentPage] || ""}
                 onChange={(e) => handleNoteChange(currentPage, e.target.value)}
-                placeholder="여기에 노트를 작성하세요..."
+                placeholder="노트 작성"
                 className="w-full h-full pt-4 border-t border-[#CDCDCD] resize-none focus:outline-none focus:ring-0 font-ibm-plex-mono text-sm"
               />
               <div className="flex justify-between items-center mt-2 text-xs text-[#CDCDCD]">
@@ -242,7 +399,7 @@ export default function PdfViewerClient({ publicId }: Props) {
             </div>
           </div>
         </div>
-      </div>
+      </Document>
     </div>
   );
 }
