@@ -3,6 +3,55 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { useChatContext } from "./ChatContext";
 
+// AI 응답 텍스트 포맷팅
+function formatAIResponse(text: string) {
+  return text.split('\n').map((line, lineIndex) => {
+    // **텍스트** 형식을 찾아서 볼드 처리
+    const parts = [];
+    let lastIndex = 0;
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    let match;
+    
+    while ((match = boldRegex.exec(line)) !== null) {
+      // ** 앞의 일반 텍스트
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lineIndex}-${lastIndex}`}>
+            {line.substring(lastIndex, match.index)}
+          </span>
+        );
+      }
+      // ** 안의 볼드 텍스트
+      parts.push(
+        <strong key={`bold-${lineIndex}-${match.index}`} className="font-bold">
+          {match[1]}
+        </strong>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // 남은 텍스트
+    if (lastIndex < line.length) {
+      parts.push(
+        <span key={`text-${lineIndex}-${lastIndex}`}>
+          {line.substring(lastIndex)}
+        </span>
+      );
+    }
+    
+    // 빈 줄이면 마진만, 아니면 내용과 마진
+    if (line.trim() === '') {
+      return <div key={lineIndex} className="h-4"></div>;
+    }
+    
+    return (
+      <div key={lineIndex} className="mb-3 leading-relaxed">
+        {parts.length > 0 ? parts : line}
+      </div>
+    );
+  });
+}
+
 export default function AiChat() {
   const { chatOpen, setChatOpen, captureMode, setCaptureMode, capturedImage, setCapturedImage, publicId, currentPage } = useChatContext();
   const [message, setMessage] = useState("");
@@ -156,7 +205,9 @@ export default function AiChat() {
           {/* 입력창 */}
           <div
             className={`w-full relative transition-all duration-300 flex flex-col items-center gap-2 ${
-              messages.length === 0 ? "top-[40%] -translate-y-1/2" : "top-0 h-full justify-between"
+              messages.length === 0
+                ? "top-[40%] -translate-y-1/2"
+                : "top-0 h-full justify-between"
             }`}
           >
             <h2
@@ -176,24 +227,28 @@ export default function AiChat() {
               {messages.map((msg, index) => (
                 <div
                   key={index}
-                  className={`break-words mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 ${
+                  className={`text-left break-words mb-2  ml-auto rounded-[24px] ${
                     msg.sender === "user"
-                      ? "bg-[#F2F2F2] text-left"
-                      : "bg-gray-100"
+                      ? "bg-[#F2F2F2]  w-fit max-w-5/6 p-3 px-4"
+                      : "w-full mt-12"
                   }`}
                 >
                   {msg.image && (
-                    <img 
-                      src={msg.image} 
-                      alt="캡쳐된 이미지" 
+                    <img
+                      src={msg.image}
+                      alt="캡쳐된 이미지"
                       className="max-w-full rounded-lg mb-2"
                     />
                   )}
-                  {msg.text}
+                  {msg.sender === "ai" ? (
+                    <div>{formatAIResponse(msg.text)}</div>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
               ))}
               {isLoading && (
-                <div className="break-words mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 bg-gray-100">
+                <div className="break-words mb-2 rounded-[24px] w-full">
                   <span className="animate-pulse">AI가 응답하는 중...</span>
                 </div>
               )}
@@ -206,9 +261,9 @@ export default function AiChat() {
               {/* 캡쳐된 이미지 미리보기 */}
               {capturedImage && (
                 <div className="relative mb-2 inline-block">
-                  <img 
-                    src={capturedImage} 
-                    alt="캡쳐 미리보기" 
+                  <img
+                    src={capturedImage}
+                    alt="캡쳐 미리보기"
                     className="max-w-[200px] rounded-lg border border-gray-300"
                   />
                   <button
@@ -258,7 +313,9 @@ export default function AiChat() {
                   if (chatOpen) setChatOpen(false);
                 }}
                 className={`cursor-pointer text-center text-sm font-medium flex items-center justify-center mt-4 gap-4 transition-colors duration-200 ${
-                  captureMode ? 'text-blue-600' : 'text-black hover:text-gray-600'
+                  captureMode
+                    ? "text-blue-600"
+                    : "text-black hover:text-gray-600"
                 }`}
               >
                 <svg
@@ -273,7 +330,7 @@ export default function AiChat() {
                     fill="currentColor"
                   />
                 </svg>
-                {captureMode ? '캡쳐 모드' : '캡쳐해서 질문하기'}
+                {captureMode ? "캡쳐 모드" : "캡쳐해서 질문하기"}
               </button>
             </div>
           </div>
