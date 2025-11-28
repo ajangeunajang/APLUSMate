@@ -110,12 +110,25 @@ export default function AiChat() {
         
         // 메시지 형식으로 변환
         const formattedMessages: { text: string; sender: string; image?: string }[] = [];
-        pageHistory.forEach((item: any) => {
+        
+        // 각 히스토리 항목에 대해 이미지를 개별적으로 로드
+        for (const item of pageHistory) {
+          let imageUrl: string | undefined = undefined;
+          
+          // image_path가 있으면 해당 chat_history_id로 이미지 요청
+          if (item.image_path && item.id) {
+            try {
+              imageUrl = `/api/chat/image/${item.id}`;
+            } catch (error) {
+              console.error(`이미지 로드 실패 (chat_history_id: ${item.id}):`, error);
+            }
+          }
+          
           // 사용자 질문
           formattedMessages.push({
             text: item.question_query,
             sender: 'user',
-            image: item.image_path ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${item.image_path}` : undefined
+            image: imageUrl
           });
           
           // AI 응답
@@ -123,7 +136,7 @@ export default function AiChat() {
             text: item.response_query,
             sender: 'ai'
           });
-        });
+        }
         
         setMessages(formattedMessages);
         setHistoryLoaded(true);
@@ -331,7 +344,7 @@ export default function AiChat() {
 
             {/* 입력창 */}
             <div
-              className={`w-full max-w-[500px] relative transition-all duration-300 min-w-[320px] flex flex-col items-center `}
+              className={`w-full max-w-[500px] relative transition-all duration-300 min-w-[320px] flex flex-col items-center pb-8`}
             >
               {/* 캡쳐된 이미지 미리보기 */}
               {capturedImage && (
@@ -349,6 +362,7 @@ export default function AiChat() {
                   </button>
                 </div>
               )}
+              {/* 메세지 입력창  */}
               <div className="relative text-center w-full">
                 <textarea
                   ref={textareaRef}
