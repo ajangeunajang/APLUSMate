@@ -402,7 +402,7 @@ export default function PdfViewerClient({ publicId }: Props) {
           {/* 1) 뒤로가기 버튼 */}
           <button
             onClick={() => router.back()}
-            className="absolute left-0 top-0 px-8 py-4 opacity-40 hover:opacity-100 transition-colors"
+            className="absolute left-0 top-0 px-8 py-4 opacity-40 hover:opacity-100 transition-colors duration-200"
           >
             <svg
               width="19"

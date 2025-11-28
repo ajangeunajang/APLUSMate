@@ -24,7 +24,7 @@ export default function AiChat() {
       setMessages([...messages, { text: message, sender: "user" }]);
       setMessage("");
       adjustHeight();
-      // 여기서 AI 응답 처리  API 호출
+      // 여기서 AI 응답 처리  API 호
     }
   };
 
