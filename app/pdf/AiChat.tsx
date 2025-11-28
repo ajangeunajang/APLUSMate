@@ -59,6 +59,7 @@ export default function AiChat() {
     []
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +80,62 @@ export default function AiChat() {
       }
     }
   }, [capturedImage, chatOpen, setChatOpen]);
+
+  // 페이지 변경 시 채팅 히스토리 불러오기
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!publicId || !currentPage) return;
+      
+      try {
+        setHistoryLoaded(false);
+        const response = await fetch(`/api/chat/history/${publicId}`);
+        
+        if (!response.ok) {
+          console.error('채팅 히스토리 로드 실패:', response.status, response.statusText);
+          // 404는 히스토리가 없는 경우이므로 빈 배열로 처리
+          if (response.status === 404) {
+            setMessages([]);
+            setHistoryLoaded(true);
+            return;
+          }
+          throw new Error(`채팅 히스토리 로드 실패: ${response.status}`);
+        }
+        
+        const history = await response.json();
+        
+        // 현재 페이지에 해당하는 히스토리만 필터링
+        const pageHistory = history.filter(
+          (item: any) => item.page_number === currentPage
+        );
+        
+        // 메시지 형식으로 변환
+        const formattedMessages: { text: string; sender: string; image?: string }[] = [];
+        pageHistory.forEach((item: any) => {
+          // 사용자 질문
+          formattedMessages.push({
+            text: item.question_query,
+            sender: 'user',
+            image: item.image_path ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/${item.image_path}` : undefined
+          });
+          
+          // AI 응답
+          formattedMessages.push({
+            text: item.response_query,
+            sender: 'ai'
+          });
+        });
+        
+        setMessages(formattedMessages);
+        setHistoryLoaded(true);
+      } catch (error) {
+        console.error('채팅 히스토리 로드 오류:', error);
+        setMessages([]);
+        setHistoryLoaded(true);
+      }
+    };
+    
+    loadChatHistory();
+  }, [publicId, currentPage]);
 
   // 메시지가 추가될 때마다 스크롤을 맨 아래로
   useEffect(() => {
