@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
-export async function GET(req: Request, { params }: { params: { path?: string[] } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  const resolvedParams = await params;
   const backend =
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     process.env.NEXT_PUBLIC_BE_URL ||
     process.env.BACKEND_URL ||
     "http://34.60.150.18:8002";
 
-  const path = (params.path || []).join("/");
+  const path = (resolvedParams.path || []).join("/");
   const backendUrl = `${backend.replace(/\/+$/, "")}/${path}`;
 
   try {
