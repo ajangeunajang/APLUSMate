@@ -230,7 +230,7 @@ export default function AiChat() {
                   className={`text-left break-words mb-2  ml-auto rounded-[24px] ${
                     msg.sender === "user"
                       ? "bg-[#F2F2F2]  w-fit max-w-5/6 p-3 px-4"
-                      : "w-full mt-12"
+                      : "w-full mt-12 animate-fade-in"
                   }`}
                 >
                   {msg.image && (
@@ -248,9 +248,9 @@ export default function AiChat() {
                 </div>
               ))}
               {isLoading && (
-                <div className="break-words mb-2 rounded-[24px] w-full">
-                  <span className="animate-pulse">
-                    와... 너 정말 핵심을 찔렀어
+                <div className="break-words pt-12 mb-2 rounded-[24px] w-full">
+                  <span className="opacity-90 animate-pulse">
+                    와... 너 정말 핵심을 찔렀어 (잠깐만)
                   </span>
                 </div>
               )}

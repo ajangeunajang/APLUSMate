@@ -8,7 +8,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import { useChatContext } from "./ChatContext";
 import SkeletonLoader from "../components/SkeletonLoader";
 
-// react-pdf를 동적으로 로드하여 SSR 문제 해결
+// react-pdf를 동적으로 로드 SSR 문제 해결
 const Document = dynamic(
   () => import("react-pdf").then((mod) => mod.Document),
   { ssr: false }
@@ -49,6 +49,7 @@ export default function PdfViewerClient({ publicId }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const thumbnailRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const pageContainerRef = useRef<HTMLDivElement | null>(null);
+  const mainViewerRef = useRef<HTMLDivElement | null>(null);
   const [pageWidth, setPageWidth] = useState<number | undefined>(undefined);
   const [pageAspectRatio, setPageAspectRatio] = useState<number>(1);
   
@@ -112,6 +113,10 @@ export default function PdfViewerClient({ publicId }: Props) {
     let scrollTimeout: NodeJS.Timeout;
 
     const handleWheel = (e: WheelEvent) => {
+      // 메인 뷰어 영역 내부에서 발생한 이벤트가 아니면 무시
+      if (!mainViewerRef.current || !mainViewerRef.current.contains(e.target as Node))
+        return;
+
       // 사이드바(썸네일) 내부에서 발생 휠 이벤트 무시
       if (sidebarRef.current && sidebarRef.current.contains(e.target as Node))
         return;
@@ -495,7 +500,7 @@ export default function PdfViewerClient({ publicId }: Props) {
         </div>
 
         {/* [우] 메인 PDF 뷰어 - 현재페이지 */}
-        <div className="flex-1 relative my-8 border-l border-[#CDCDCD] flex flex-col items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
+        <div ref={mainViewerRef} className="flex-1 relative my-8 border-l border-[#CDCDCD] flex flex-col items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
           {/* (1) 뒤로가기 버튼 */}
           <button
             onClick={() => router.back()}
