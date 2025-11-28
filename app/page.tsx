@@ -239,7 +239,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-[#F2F2F2] font-sans overflow-hidden">
+    <div className="h-screen w-screen flex items-center justify-center font-sans overflow-hidden">
       <Image
         className="fixed top-8 left-8 z-10"
         src="/logo.svg"
