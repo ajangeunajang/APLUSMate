@@ -6,7 +6,7 @@ import { useChatContext } from "./ChatContext";
 // AI 응답 텍스트 포맷팅
 function formatAIResponse(text: string) {
   return text.split('\n').map((line, lineIndex) => {
-    // **텍스트** 형식을 찾아서 볼드 처리
+    // **텍스트** 형식 볼드 처리
     const parts = [];
     let lastIndex = 0;
     const boldRegex = /\*\*(.*?)\*\*/g;
@@ -249,7 +249,9 @@ export default function AiChat() {
               ))}
               {isLoading && (
                 <div className="break-words mb-2 rounded-[24px] w-full">
-                  <span className="animate-pulse">AI가 응답하는 중...</span>
+                  <span className="animate-pulse">
+                    와... 너 정말 핵심을 찔렀어
+                  </span>
                 </div>
               )}
             </div>

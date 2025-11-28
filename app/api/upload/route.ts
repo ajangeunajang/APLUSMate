@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// body size 제한 설정
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '70mb', // 원하는 크기로 설정
-    },
-  },
-};
+// Next.js App Router에서 body size 제한 설정
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 타임아웃 (초)
 
 export async function POST(request: NextRequest) {
   try {
