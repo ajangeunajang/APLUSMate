@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { useChatContext } from "./ChatContext";
 
 export default function AiChat() {
-  const { chatOpen, setChatOpen, captureMode, setCaptureMode, capturedImage, setCapturedImage } = useChatContext();
+  const { chatOpen, setChatOpen, captureMode, setCaptureMode, capturedImage, setCapturedImage, publicId, currentPage } = useChatContext();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<{ text: string; sender: string; image?: string }[]>(
     []
   );
+  const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
@@ -39,28 +40,53 @@ export default function AiChat() {
     };
     
     setMessages((prev) => [...prev, newMessage]);
+    const currentQuestion = message;
+    const currentImage = capturedImage;
     setMessage("");
     setCapturedImage(null);
+    setIsLoading(true);
     
     // reset inline height so min-height (3rem) from tailwind takes effect
     if (textareaRef.current) {
       textareaRef.current.style.height = "3rem";
     }
     
-    // TODO: 여기서 AI 응답 처리 API (텍스트 + 이미지를 서버로 전송)
     try {
-      // const response = await fetch('/api/chat', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     message: newMessage.text,
-      //     image: newMessage.image
-      //   })
-      // });
-      // const data = await response.json();
-      // setMessages(prev => [...prev, { text: data.response, sender: 'ai' }]);
+      const formData = new FormData();
+      formData.append("public_id", publicId);
+      formData.append("page_number", currentPage.toString());
+      formData.append("question_query", currentQuestion);
+      
+      // 이미지가 있으면 base64를 Blob으로 변환하여 추가
+      if (currentImage) {
+        const response = await fetch(currentImage);
+        const blob = await response.blob();
+        formData.append("image_file", blob, "captured_image.png");
+      }
+      
+      const apiResponse = await fetch('/api/chat/query', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!apiResponse.ok) {
+        throw new Error(`API 요청 실패: ${apiResponse.status}`);
+      }
+      
+      const data = await apiResponse.json();
+      
+      // 응답이 문자열이면 그대로, 객체이면 answer 필드 사용
+      const answerText = typeof data === 'string' ? data : (data.answer || '응답을 받지 못했습니다.');
+      
+      setMessages(prev => [...prev, { text: answerText, sender: 'ai' }]);
     } catch (error) {
       console.error('메시지 전송 실패:', error);
+      setMessages(prev => [...prev, { 
+        text: '죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.', 
+        sender: 'ai' 
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,6 +192,11 @@ export default function AiChat() {
                   {msg.text}
                 </div>
               ))}
+              {isLoading && (
+                <div className="break-words mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 bg-gray-100">
+                  <span className="animate-pulse">AI가 응답하는 중...</span>
+                </div>
+              )}
             </div>
 
             {/* 입력창 */}
@@ -203,7 +234,8 @@ export default function AiChat() {
                 />
                 <button
                   onClick={handleSend}
-                  className="absolute right-0 top-0 p-4 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
+                  disabled={isLoading}
+                  className="absolute right-0 top-0 p-4 focus:outline-none hover:brightness-40 duration-200 transition-brightness disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg
                     width="23"
@@ -241,7 +273,7 @@ export default function AiChat() {
                     fill="currentColor"
                   />
                 </svg>
-                {captureMode ? '캡쳐 모드' : '부분 선택 후 질문하기'}
+                {captureMode ? '캡쳐 모드' : '캡쳐해서 질문하기'}
               </button>
             </div>
           </div>

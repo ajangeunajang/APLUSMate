@@ -16,7 +16,7 @@ export default async function Page({ params }: { params: any }) {
 	}
 
 	return (
-    <ChatProvider>
+    <ChatProvider publicId={publicId}>
       <div className="h-screen overflow-hidden">
         <PdfViewerClient publicId={publicId} />
         <AiChat />

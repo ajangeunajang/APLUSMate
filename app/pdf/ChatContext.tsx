@@ -8,14 +8,20 @@ interface ChatContextType {
   setCaptureMode: (mode: boolean) => void;
   capturedImage: string | null;
   setCapturedImage: (image: string | null) => void;
+  publicId: string;
+  setPublicId: (id: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
+export function ChatProvider({ children, publicId: initialPublicId }: { children: ReactNode; publicId?: string }) {
   const [chatOpen, setChatOpen] = useState(true);
   const [captureMode, setCaptureMode] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [publicId, setPublicId] = useState(initialPublicId || "");
+  const [currentPage, setCurrentPage] = useState(1);
 
   return (
     <ChatContext.Provider value={{ 
@@ -24,7 +30,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       captureMode,
       setCaptureMode,
       capturedImage,
-      setCapturedImage
+      setCapturedImage,
+      publicId,
+      setPublicId,
+      currentPage,
+      setCurrentPage
     }}>
       {children}
     </ChatContext.Provider>

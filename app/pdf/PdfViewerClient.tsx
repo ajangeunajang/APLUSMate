@@ -31,12 +31,17 @@ type Props = {
 
 export default function PdfViewerClient({ publicId }: Props) {
   const router = useRouter();
-  const { chatOpen, captureMode, setCaptureMode, setCapturedImage } = useChatContext();
+  const { chatOpen, captureMode, setCaptureMode, setCapturedImage, setCurrentPage: setContextCurrentPage } = useChatContext();
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [notes, setNotes] = useState<{ [key: number]: string }>({});
   const [pdfTitle, setPdfTitle] = useState<string>("제목 없음");
   const [pdfDate, setPdfDate] = useState<string>("");
+
+  // Context의 currentPage도 동기화
+  useEffect(() => {
+    setContextCurrentPage(currentPage);
+  }, [currentPage, setContextCurrentPage]);
 
   // 사이드바 ref
   const sidebarRef = useRef<HTMLDivElement | null>(null);
