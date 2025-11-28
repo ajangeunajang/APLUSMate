@@ -60,6 +60,7 @@ export default function AiChat() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -78,6 +79,20 @@ export default function AiChat() {
       }
     }
   }, [capturedImage, chatOpen, setChatOpen]);
+
+  // 메시지가 추가될 때마다 스크롤을 맨 아래로
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [messages]);
 
   const handleSend = async () => {
     if (!message.trim() && !capturedImage) return;
@@ -220,6 +235,7 @@ export default function AiChat() {
 
             {/* 채팅 버블 */}
             <div
+              ref={chatContainerRef}
               className={`transition-opacity w-full duration-300 overflow-x-hidden overflow-y-auto mb-4 ${
                 messages.length === 0 ? "h-0 opacity-0" : "flex-1 opacity-100"
               }`}
@@ -230,14 +246,14 @@ export default function AiChat() {
                   className={`text-left break-words mb-2  ml-auto rounded-[24px] ${
                     msg.sender === "user"
                       ? "bg-[#F2F2F2]  w-fit max-w-5/6 p-3 px-4"
-                      : "w-full mt-12 animate-fade-in"
+                      : "w-full mt-12 animate-fade-in pb-6"
                   }`}
                 >
                   {msg.image && (
                     <img
                       src={msg.image}
                       alt="캡쳐된 이미지"
-                      className="max-w-full rounded-lg mb-2"
+                      className="max-w-full rounded-2xl  mt-1 mb-2"
                     />
                   )}
                   {msg.sender === "ai" ? (
@@ -250,7 +266,7 @@ export default function AiChat() {
               {isLoading && (
                 <div className="break-words pt-12 mb-2 rounded-[24px] w-full">
                   <span className="opacity-90 animate-pulse">
-                    와... 너 정말 핵심을 찔렀어 (잠깐만)
+                    와... 너 정말 핵심을 찔렀어 (잠깐만 기다려봐)
                   </span>
                 </div>
               )}
