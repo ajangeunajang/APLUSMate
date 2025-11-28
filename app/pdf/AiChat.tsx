@@ -21,9 +21,12 @@ export default function AiChat() {
 
   const handleSend = () => {
     if (message.trim()) {
-      setMessages([...messages, { text: message, sender: "user" }]);
+      setMessages((prev) => [...prev, { text: message, sender: "user" }]);
       setMessage("");
-      adjustHeight();
+      // reset inline height so min-height (3rem) from tailwind takes effect
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "3rem";
+      }
       // 여기서 AI 응답 처리  API 호
     }
   };
@@ -61,8 +64,9 @@ export default function AiChat() {
             : "bottom-12 right-12 w-[50px] h-[50px]"
         }`}
       >
-        <div className="w-full h-full bg-white rounded-[48px] p-8 flex flex-col">
-          <div className="flex justify-between">
+        <div className="w-full h-full bg-white overflow-hidden rounded-[48px] p-8 flex flex-col items-center">
+          {/* 채팅창 header */}
+          <div className="flex justify-between w-full">
             <Image
               className=""
               src="/logo.svg"
@@ -76,80 +80,102 @@ export default function AiChat() {
               onClick={() => setChatOpen(!chatOpen)}
               className="font-medium font-ibm-plex-mono text-sm"
             >
-              Close
+              <svg
+                width="33"
+                height="33"
+                viewBox="0 0 33 33"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M24.5146 8.2627L8.26367 24.5137" stroke="black" />
+                <path d="M24.2388 24.5146L7.98779 8.26367" stroke="black" />
+              </svg>
             </button>
           </div>
-          <h2
-            className={`relative top-1/3 font-ibm-plex-mono transition-opacity duration-300 font-medium text-center mb-12 ${
-              messages.length === 0 ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            Any Questions?
-          </h2>
-          {/* 채팅 버블 */}
-          <div className="flex-1 overflow-y-auto mb-4">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 ${
-                  msg.sender === "user"
-                    ? "bg-[#F2F2F2] text-left"
-                    : "bg-gray-100"
-                }`}
-              >
-                {msg.text}
-              </div>
-            ))}
-          </div>
+
           {/* 입력창 */}
           <div
-            className={`relative transition-all duration-300 ${
-              messages.length === 0 ? "bottom-1/2 mx-10" : "bottom-0"
+            className={`w-full relative transition-all duration-300 flex flex-col items-center gap-2 ${
+              messages.length === 0 ? "top-1/3" : "top-0 h-full justify-between"
             }`}
           >
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-                adjustHeight();
-              }}
-              onKeyPress={handleKeyPress}
-              placeholder="무엇이든 물어보세요"
-              rows={1}
-              className={`max-h-[200px] min-h-[3rem] w-full flex-1 py-2 pt-3 pl-4 pr-12 border border-black rounded-[24px] focus:outline-none resize-none overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 `}
-            />
-            <button
-              onClick={handleSend}
-              className="absolute right-0 top-0 p-4 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
+            <h2
+              className={`relative font-ibm-plex-mono transition-opacity duration-300 font-medium text-center ${
+                messages.length === 0 ? "opacity-100" : "opacity-0 max-h-4"
+              }`}
             >
-              <svg
-                width="23"
-                height="16"
-                viewBox="0 0 23 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0 -1.00536e-06L6.62847 2.27094L6.62847 13.7291L-6.99382e-07 16L-5.53606e-07 12.665L3.65482 11.4581L3.65482 4.54187L-1.47284e-07 3.36946L0 -1.00536e-06ZM7.03247 5.64039L7.03247 2.41379L23 7.87685L23 8.16256L7.03247 13.5911L7.03247 10.3645L14.2059 8.02463L7.03247 5.65025L7.03247 5.64039Z"
-                  fill="#D9D9D9"
+              Any Questions?
+            </h2>
+
+            {/* 채팅 버블 */}
+            <div
+              className={`transition-opacity w-full duration-300 overflow-x-hidden overflow-y-auto mb-4 ${
+                messages.length === 0 ? "h-0 opacity-0" : "flex-1 opacity-100"
+              }`}
+            >
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`break-words mb-2 p-3 px-4 ml-auto rounded-[24px] w-fit max-w-5/6 ${
+                    msg.sender === "user"
+                      ? "bg-[#F2F2F2] text-left"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            <div
+              className={`relative transition-all duration-300 min-w-[320px]`}
+            >
+              <div className="relative text-center">
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    adjustHeight();
+                  }}
+                  onKeyPress={handleKeyPress}
+                  placeholder="무엇이든 물어보세요"
+                  rows={1}
+                  className={`max-h-[200px] min-h-[3rem] w-full flex-1 py-2 pt-3 pl-4 pr-12 border border-black rounded-[24px] focus:outline-none resize-none overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 `}
                 />
-              </svg>
-            </button>
-            <div className="text-center text-sm font-medium flex items-center justify-center mt-4 gap-4">
-              <svg
-                width="40"
-                height="21"
-                viewBox="0 0 40 21"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0 18V16.125H1V18C1 19.1046 1.89543 20 3 20V21L2.8457 20.9961C1.26055 20.9158 0 19.6051 0 18ZM5.83301 20V21H3V20H5.83301ZM17.167 20V21H11.5V20H17.167ZM28.5 20V21H22.833V20H28.5ZM37 20V21H34.167V20H37ZM40 18C40 19.6569 38.6569 21 37 21V20C38.1046 20 39 19.1046 39 18V16.125H40V18ZM1 8.625V12.375H0V8.625H1ZM40 8.625V12.375H39V8.625H40ZM0 3C0 1.34315 1.34315 0 3 0H5.83301V1H3C1.89543 1 1 1.89543 1 3V4.875H0V3ZM40 4.875H39V3C39 1.89543 38.1046 1 37 1H34.167V0H37C38.6569 0 40 1.34315 40 3V4.875ZM17.167 0V1H11.5V0H17.167ZM28.5 0V1H22.833V0H28.5Z"
-                  fill="black"
-                />
-              </svg>
-              부분 선택 후 질문하기
+                <button
+                  onClick={handleSend}
+                  className="absolute right-0 top-0 p-4 focus:outline-none hover:brightness-40 duration-200 transition-brightness"
+                >
+                  <svg
+                    width="23"
+                    height="16"
+                    viewBox="0 0 23 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0 -1.00536e-06L6.62847 2.27094L6.62847 13.7291L-6.99382e-07 16L-5.53606e-07 12.665L3.65482 11.4581L3.65482 4.54187L-1.47284e-07 3.36946L0 -1.00536e-06ZM7.03247 5.64039L7.03247 2.41379L23 7.87685L23 8.16256L7.03247 13.5911L7.03247 10.3645L14.2059 8.02463L7.03247 5.65025L7.03247 5.64039Z"
+                      fill="#D9D9D9"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="text-center text-sm font-medium flex items-center justify-center mt-4 gap-4">
+                <svg
+                  width="40"
+                  height="21"
+                  viewBox="0 0 40 21"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M0 18V16.125H1V18C1 19.1046 1.89543 20 3 20V21L2.8457 20.9961C1.26055 20.9158 0 19.6051 0 18ZM5.83301 20V21H3V20H5.83301ZM17.167 20V21H11.5V20H17.167ZM28.5 20V21H22.833V20H28.5ZM37 20V21H34.167V20H37ZM40 18C40 19.6569 38.6569 21 37 21V20C38.1046 20 39 19.1046 39 18V16.125H40V18ZM1 8.625V12.375H0V8.625H1ZM40 8.625V12.375H39V8.625H40ZM0 3C0 1.34315 1.34315 0 3 0H5.83301V1H3C1.89543 1 1 1.89543 1 3V4.875H0V3ZM40 4.875H39V3C39 1.89543 38.1046 1 37 1H34.167V0H37C38.6569 0 40 1.34315 40 3V4.875ZM17.167 0V1H11.5V0H17.167ZM28.5 0V1H22.833V0H28.5Z"
+                    fill="black"
+                  />
+                </svg>
+                부분 선택 후 질문하기
+              </div>
             </div>
           </div>
         </div>
