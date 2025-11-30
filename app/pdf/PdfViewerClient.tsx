@@ -464,7 +464,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                   thumbnailRefs.current[index + 1] = el;
                 }}
                 onClick={() => setCurrentPage(index + 1)}
-                className={`mb-2 cursor-pointer rounded transition duration-100 relative ${
+                className={`mb-2 cursor-pointer rounded transition duration-100 relative overflow-hidden ${
                   currentPage === index + 1
                     ? "opacity-100" // 선택된 페이지만 적용
                     : "opacity-40 hover:opacity-90 text-gray-100"
