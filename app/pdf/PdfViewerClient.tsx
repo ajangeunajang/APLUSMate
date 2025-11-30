@@ -548,7 +548,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                   className="rounded-2xl overflow-hidden rounded-xl"
                   width={pageWidth}
                   renderMode="canvas"
-                  renderTextLayer={false}
+                  renderTextLayer={true}
                   renderAnnotationLayer={false}
                   loading={
                     <div className="w-full h-[70vh] bg-gray-200/80 rounded-2xl animate-pulse" />
