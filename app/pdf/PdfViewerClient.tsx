@@ -454,7 +454,7 @@ export default function PdfViewerClient({ publicId }: Props) {
         {/* [좌] 썸네일 사이드바 */}
         <div
           ref={sidebarRef}
-          className="h-full w-48 min-w-48 overflow-y-auto p-8 pl-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="h-full w-48 min-w-48 overflow-y-auto p-8 pl-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {numPages &&
             Array.from(new Array(numPages), (el, index) => (
@@ -464,10 +464,10 @@ export default function PdfViewerClient({ publicId }: Props) {
                   thumbnailRefs.current[index + 1] = el;
                 }}
                 onClick={() => setCurrentPage(index + 1)}
-                className={`mb-3 pl-3 cursor-pointer transition duration-100 relative overflow-hidden ${
+                className={`mb-3 pl-2 cursor-pointer transition duration-100 relative overflow-hidden ${
                   currentPage === index + 1
-                    ? "opacity-100 border-l " // 선택된 페이지만 적용
-                    : "opacity-60 hover:opacity-90 text-gray-100"
+                    ? "opacity-100 border-l" // 선택된 페이지만 적용
+                    : "opacity-70 brightness-70 hover:opacity-90 hover:brightness-100 text-gray-100"
                 }`}
               >
                 {/* 같은 Document 내의 Page 컴포넌트!!  */}
@@ -481,7 +481,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                   }
                   className={`rounded-sm overflow-hidden ${
                     currentPage === index + 1
-                      ? "" // 선택된 페이지만 적용
+                      ? "shadow-lg" // 선택된 페이지만 적용
                       : ""
                   }`}
                 />
