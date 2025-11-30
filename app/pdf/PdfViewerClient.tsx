@@ -548,7 +548,7 @@ export default function PdfViewerClient({ publicId }: Props) {
               >
                 <Page
                   pageNumber={currentPage}
-                  className="rounded-2xl overflow-hidden rounded-xl"
+                  className="border-1 border-[#CDCDCD] rounded-2xl overflow-hidden"
                   width={pageWidth}
                   renderMode="canvas"
                   renderTextLayer={true}
