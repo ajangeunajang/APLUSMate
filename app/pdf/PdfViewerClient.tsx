@@ -454,7 +454,7 @@ export default function PdfViewerClient({ publicId }: Props) {
         {/* [좌] 썸네일 사이드바 */}
         <div
           ref={sidebarRef}
-          className="h-full w-48 min-w-48 overflow-y-auto p-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="h-full w-48 min-w-48 overflow-y-auto p-8 pl-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {numPages &&
             Array.from(new Array(numPages), (el, index) => (
@@ -464,10 +464,10 @@ export default function PdfViewerClient({ publicId }: Props) {
                   thumbnailRefs.current[index + 1] = el;
                 }}
                 onClick={() => setCurrentPage(index + 1)}
-                className={`mb-2 cursor-pointer rounded transition duration-100 relative overflow-hidden ${
+                className={`mb-3 pl-3 cursor-pointer transition duration-100 relative overflow-hidden ${
                   currentPage === index + 1
-                    ? "opacity-100" // 선택된 페이지만 적용
-                    : "opacity-40 hover:opacity-90 text-gray-100"
+                    ? "opacity-100 border-l " // 선택된 페이지만 적용
+                    : "opacity-60 hover:opacity-90 text-gray-100"
                 }`}
               >
                 {/* 같은 Document 내의 Page 컴포넌트!!  */}
@@ -481,7 +481,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                   }
                   className={`rounded-sm overflow-hidden ${
                     currentPage === index + 1
-                      ? "shadow-lg" // 선택된 페이지만 적용
+                      ? "" // 선택된 페이지만 적용
                       : ""
                   }`}
                 />
@@ -500,7 +500,10 @@ export default function PdfViewerClient({ publicId }: Props) {
         </div>
 
         {/* [우] 메인 PDF 뷰어 - 현재페이지 */}
-        <div ref={mainViewerRef} className="flex-1 relative my-8 border-l border-[#CDCDCD] flex flex-col items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center">
+        <div
+          ref={mainViewerRef}
+          className="flex-1 relative my-8 border-l border-[#CDCDCD] flex flex-col items-center justify-between p-4 pl-8 font-ibm-plex-mono text-[#545454] font-medium text-center"
+        >
           {/* (1) 뒤로가기 버튼 */}
           <button
             onClick={() => router.back()}
@@ -536,9 +539,9 @@ export default function PdfViewerClient({ publicId }: Props) {
                 </span>
                 <span className="pl-4">page</span>
               </div>
-              <div 
+              <div
                 ref={pdfPageRef}
-                className={`relative ${captureMode ? 'cursor-crosshair' : ''}`}
+                className={`relative ${captureMode ? "cursor-crosshair" : ""}`}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
