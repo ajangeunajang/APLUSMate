@@ -274,7 +274,7 @@ export default function Home() {
               <li className="text-zinc-300 px-4 py-2 rounded-lg w-full cursor-not-allowed">
                 Shop
               </li>
-             </ul>
+            </ul>
             <div className="fixed bottom-0 left-0 p-4">
               <h1 className="inline-block text-gray-400 text-sm p-2 pl-4 pb-4 font-ibm-plex-mono font-bold">
                 {firstOnly
@@ -299,7 +299,7 @@ export default function Home() {
         }   flex flex-col items-center justify-center gap-12 p-8 sm:items-start transition-all duration-600`}
       >
         <div
-          className={`rounded-[48px] bg-white w-full h-auto sm:h-full p-8 gap-6 text-center flex flex-col items-center ${
+          className={`rounded-[48px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overflow-scroll bg-white w-full h-auto sm:h-full p-8 gap-6 text-center flex flex-col items-center ${
             isLoginPopupOpen ? "justify-center" : "justify-start"
           }`}
         >
@@ -391,7 +391,7 @@ export default function Home() {
                 className="hidden"
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full pb-20">
                 {/* 업로드 영역 */}
                 <div
                   onClick={handleDivClick}
@@ -436,10 +436,12 @@ export default function Home() {
                 {/* 로그인 사용자 - 내 PDF 파일 목록 */}
                 {pdfFiles.map((pdf) => {
                   // Use separate thumbnail API endpoint
-                  const imageSrc = `/api/pdfs/${encodeURIComponent(pdf.public_id)}/thumbnail`;
+                  const imageSrc = `/api/pdfs/${encodeURIComponent(
+                    pdf.public_id
+                  )}/thumbnail`;
 
                   const hasImageError = imageErrors.has(pdf.public_id);
-                    
+
                   return (
                     <a
                       key={pdf.public_id}
