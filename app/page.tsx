@@ -52,7 +52,11 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         const files = Array.isArray(data) ? data : data.pdfs || [];
-        setPdfFiles(files);
+        // Sort by upload_time in descending order (most recent first)
+        const sortedFiles = files.sort((a: PDFFile, b: PDFFile) => {
+          return new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime();
+        });
+        setPdfFiles(sortedFiles);
         return;
       } else {
         const errorText = await response.text();
