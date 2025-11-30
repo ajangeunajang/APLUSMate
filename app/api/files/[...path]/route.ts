@@ -5,8 +5,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ path: st
   const backend =
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     process.env.NEXT_PUBLIC_BE_URL ||
-    process.env.BACKEND_URL ||
-    "http://34.60.150.18:8002";
+    process.env.BACKEND_URL;
 
   const path = (resolvedParams.path || []).join("/");
   const backendUrl = `${backend.replace(/\/+$/, "")}/${path}`;
