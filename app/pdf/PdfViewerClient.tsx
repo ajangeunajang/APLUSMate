@@ -473,7 +473,7 @@ export default function PdfViewerClient({ publicId }: Props) {
                 {/* 같은 Document 내의 Page 컴포넌트!!  */}
                 <Page
                   pageNumber={index + 1}
-                  scale={0.15}
+                  width={128}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                   loading={
