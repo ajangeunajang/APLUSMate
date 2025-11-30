@@ -7,6 +7,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ path: st
     process.env.NEXT_PUBLIC_BE_URL ||
     process.env.BACKEND_URL;
 
+  if (!backend) {
+    return new NextResponse("Backend URL not configured", { status: 500 });
+  }
+
   const path = (resolvedParams.path || []).join("/");
   const backendUrl = `${backend.replace(/\/+$/, "")}/${path}`;
 
